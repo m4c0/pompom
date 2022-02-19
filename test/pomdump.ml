@@ -6,7 +6,7 @@ let () =
   Arg.parse speclist anon_fn usage_msg;
   if !java = "" then failwith "Missing input";
 
-  let print ((group, artifact, version) : Pompom.id) =
+  let print (group, artifact, version) =
     Printf.printf "%s:%s-%s\n" group artifact version
   in
 
