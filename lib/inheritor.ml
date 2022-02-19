@@ -1,6 +1,6 @@
 type id = string * string * string
 type t = {
-  parent: id;
+  parent: t option;
   id: id;
   deps: id list;
 }
@@ -16,4 +16,4 @@ let read_single_pom fname =
   let parent = to_id ("", "", "") pt.parent in
   let id = to_id parent pt.id in
   let deps = List.map (to_id parent) pt.deps in
-  { parent; id; deps }
+  { parent=None; id; deps }

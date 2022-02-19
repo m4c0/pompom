@@ -1,3 +1,5 @@
+type t = Inheritor.t
+
 let from_java fname =
   let rec pom_of fname = 
     let pom = Filename.concat fname "pom.xml" in

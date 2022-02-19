@@ -6,16 +6,21 @@ let () =
   Arg.parse speclist anon_fn usage_msg;
   if !java = "" then failwith "Missing input";
 
-  let print (group, artifact, version) =
-    Printf.printf "%s:%s-%s\n" group artifact version
+  let print indent (group, artifact, version) =
+    Printf.printf "%s%s:%s   %s\n" indent group artifact version
   in
+  let rec printobj indent (p : Pompom.t) =
+    let ni = "  " ^ indent in
+    print_string indent;
+    print_endline "parent:";
+    Option.iter (printobj ni) p.parent;
 
-  let p = Pompom.from_java !java in
-  print_endline "parent:";
-  print p.parent;
+    print_string indent;
+    print_string "id: ";
+    print "" p.id;
 
-  print_endline "id:";
-  print p.id;
-
-  print_endline "deps:";
-  p.deps |> List.iter print;
+    print_string indent;
+    print_endline "deps:";
+    p.deps |> List.iter (print ni)
+  in
+  Pompom.from_java !java |> printobj ""
