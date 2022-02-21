@@ -48,12 +48,5 @@
   > EOF
 
   $ ./pomdump.exe -j Test.java -m repo
-  parent:
-    parent:
-      parent:
-      id: iam:grampa-2
-      deps:
-    id: iam:parent-1
-    deps:
   id: hello:world-1.0
   deps:

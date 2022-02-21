@@ -1,6 +1,5 @@
 type id = string * string * string
 type t = {
-  parent: t option;
   id: id;
   deps: id list;
 }
@@ -43,15 +42,14 @@ let read_pom (m2dir : string) fname =
   let rec stitch_pom (fname : string) (parsed : Parser.t) : t =
     if is_empty parsed.parent
     then
-      let parent = None in
       let id = id_or_bust "orphan pom" parsed.id in
       let deps = List.map (id_or_bust "orphan pom's dependency") parsed.deps in
-      { parent; id; deps }
+      { id; deps }
     else
       let (pfn, pp) = parse_parent_pom parsed.parent fname in
       let parent = stitch_pom pfn pp in
       let id = to_id parent.id parsed.id in
       let deps = List.map (to_id id) parsed.deps in
-      { parent = Some(parent); id; deps }
+      { id; deps }
   in
   Parser.parse_file fname |> stitch_pom fname

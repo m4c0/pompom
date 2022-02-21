@@ -8,6 +8,5 @@
   > EOF
 
   $ ./pomdump.exe -j Test.java -m repo
-  parent:
   id: hello:world-1.0
   deps:

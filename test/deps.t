@@ -9,7 +9,6 @@
   > EOF
 
   $ ./pomdump.exe -j Test.java -m repo
-  parent:
   id: got:deps-0
   deps:
 
@@ -35,7 +34,6 @@
   > EOF
 
   $ ./pomdump.exe -j Test.java -m repo
-  parent:
   id: got:deps-0
   deps:
     dep:one-99
