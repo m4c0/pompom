@@ -4,9 +4,9 @@ type t = {
   deps: id list;
 }
 
-let to_id ((pgrp, part, pver) : id) (id : Parser.id) : id =
+let to_id ((pgrp, _, pver) : id) (id : Parser.id) : id =
   let grp = Option.value id.group ~default:pgrp in
-  let art = Option.value id.artifact ~default:part in
+  let art = Option.get id.artifact in
   let ver = Option.value id.version ~default:pver in
   (grp, art, ver)
 
@@ -48,8 +48,9 @@ let read_pom (m2dir : string) fname =
     else
       let (pfn, pp) = parse_parent_pom parsed.parent fname in
       let parent = stitch_pom pfn pp in
+      let pdeps = Deps.from_list parent.deps in
       let id = to_id parent.id parsed.id in
-      let deps = List.map (to_id id) parsed.deps in
+      let deps = List.map (to_id id) parsed.deps |> Deps.merge pdeps |> Deps.to_list in
       { id; deps }
   in
   Parser.parse_file fname |> stitch_pom fname
