@@ -69,6 +69,10 @@ let from_smelly (xml : Xmelly.t) =
 
 let parse_file pomfn =
   let pom = open_in pomfn in
-  let res = Xmelly.parse pom |> from_smelly in
-  close_in pom;
-  res
+  try
+    let res = Xmelly.parse pom |> from_smelly in
+    close_in pom;
+    res
+  with Failure x ->
+    close_in_noerr pom;
+    failwith (pomfn ^ ": " ^ x)

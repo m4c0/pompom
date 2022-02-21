@@ -7,4 +7,4 @@ let from_java fname =
     then pom
     else fname |> Filename.dirname |> pom_of
   in
-  pom_of fname |> Inheritor.read_single_pom
+  pom_of fname |> Inheritor.read_pom
