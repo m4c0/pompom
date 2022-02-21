@@ -15,7 +15,7 @@ let () =
   if !java = "" then failwith "Missing input";
 
   let print indent (group, artifact, version) =
-    Printf.printf "%s%s:%s   %s\n" indent group artifact version
+    Printf.printf "%s%s:%s-%s\n" indent group artifact version
   in
   let rec printobj indent (p : Pompom.t) =
     let ni = "  " ^ indent in

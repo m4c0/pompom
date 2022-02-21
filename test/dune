@@ -1,3 +1,5 @@
 (executable
  (name pomdump)
  (libraries pompom))
+
+(cram (deps pomdump.exe))
