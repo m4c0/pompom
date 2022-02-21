@@ -56,9 +56,13 @@ let read_pom (m2dir : string) fname =
       let pdep_mgmt = Deps.from_list parent.dep_mgmt in
       let dep_mgmt_map = Deps.merge pdep_mgmt dep_mgmt in
       let dep_mgmt = Deps.to_list dep_mgmt_map in
+      let dep_or_fail x =
+        try Deps.find dep_mgmt_map x
+        with Failure x -> x ^ " in " ^ fname |> failwith
+      in
 
       let pdeps = Deps.from_list parent.deps in
-      let deps = List.map (Deps.find dep_mgmt_map) parsed.deps |> Deps.merge pdeps |> Deps.to_list in
+      let deps = List.map dep_or_fail parsed.deps |> Deps.merge pdeps |> Deps.to_list in
       { id; deps; dep_mgmt }
   in
   Parser.parse_file fname |> stitch_pom fname
