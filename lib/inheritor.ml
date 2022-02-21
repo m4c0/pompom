@@ -28,7 +28,7 @@ let read_pom (m2dir : string) fname =
   let parse_parent_pom (pid : Parser.id) (cfn : string) : string * Parser.t =
     let pfld = Filename.dirname cfn |> Filename.dirname in
     let pfn = Filename.concat pfld "pom.xml" in
-    if Sys.file_exists pfn
+    if pfn <> cfn && Sys.file_exists pfn
     then (pfn, Parser.parse_file pfn)
     else
       let (grp, art, ver) = id_or_bust "parent" pid in
