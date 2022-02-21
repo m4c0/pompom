@@ -7,6 +7,7 @@ type t = {
   parent: id;
   id: id;
   deps: id list;
+  dep_mgmt: id list;
 }
 
 let empty_id : id = {
@@ -18,6 +19,7 @@ let empty : t = {
   parent = empty_id;
   id = empty_id;
   deps = [];
+  dep_mgmt = [];
 }
 
 let text_of (l : Xmelly.t list) : string option =
@@ -40,9 +42,15 @@ let deps_of (l : Xmelly.t list) : id list =
   let dep_of (xml : Xmelly.t) =
     match xml with
     | Element("dependency", _, el) -> id_of el
+    | Element(x, _, _) -> x ^ " was unexpected inside dependencies" |> failwith
     | _ -> failwith "unexpected thing inside dependencies"
   in
   l |> List.map dep_of
+
+let dep_mgmt_of (l : Xmelly.t list) : id list =
+  match l with
+  | [Element("dependencies", _, el)] -> deps_of el
+  | _ -> failwith "unexpected thing inside dependencyManagement"
 
 let rec project_of (l : Xmelly.t list) : t =
   match l with
@@ -60,6 +68,8 @@ let rec project_of (l : Xmelly.t list) : t =
       { res with id = { res.id with version = (text_of el) } }
   | Element("dependencies", _, el) :: ll ->
       { (project_of ll) with deps = (deps_of el) }
+  | Element("dependencyManagement", _, el) :: ll ->
+      { (project_of ll) with dep_mgmt = (dep_mgmt_of el) }
   | _ :: ll -> project_of ll
 
 let from_smelly (xml : Xmelly.t) =

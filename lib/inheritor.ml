@@ -2,6 +2,7 @@ type id = string * string * string
 type t = {
   id: id;
   deps: id list;
+  dep_mgmt: id list;
 }
 
 let to_id ((pgrp, _, pver) : id) (id : Parser.id) : id =
@@ -40,17 +41,24 @@ let read_pom (m2dir : string) fname =
       (repofn, Parser.parse_file repofn)
   in
   let rec stitch_pom (fname : string) (parsed : Parser.t) : t =
+    let dep_mgmt = List.map (id_or_bust "pom's dependency management") parsed.dep_mgmt in
     if is_empty parsed.parent
     then
       let id = id_or_bust "orphan pom" parsed.id in
       let deps = List.map (id_or_bust "orphan pom's dependency") parsed.deps in
-      { id; deps }
+      { id; deps; dep_mgmt }
     else
       let (pfn, pp) = parse_parent_pom parsed.parent fname in
       let parent = stitch_pom pfn pp in
-      let pdeps = Deps.from_list parent.deps in
+
       let id = to_id parent.id parsed.id in
-      let deps = List.map (to_id id) parsed.deps |> Deps.merge pdeps |> Deps.to_list in
-      { id; deps }
+
+      let pdep_mgmt = Deps.from_list parent.dep_mgmt in
+      let dep_mgmt_map = Deps.merge pdep_mgmt dep_mgmt in
+      let dep_mgmt = Deps.to_list dep_mgmt_map in
+
+      let pdeps = Deps.from_list parent.deps in
+      let deps = List.map (Deps.find dep_mgmt_map) parsed.deps |> Deps.merge pdeps |> Deps.to_list in
+      { id; deps; dep_mgmt }
   in
   Parser.parse_file fname |> stitch_pom fname
