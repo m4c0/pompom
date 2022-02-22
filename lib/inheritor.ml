@@ -1,8 +1,13 @@
 type id = string * string * string
+type dep = string option
+type dm = {
+  version: string; 
+  is_bom: bool;
+}
 type t = {
   id: id;
-  deps: string option Ga_map.t;
-  dep_mgmt: string Ga_map.t;
+  deps: dep Ga_map.t;
+  dep_mgmt: dm Ga_map.t;
 }
 
 let id_of (parent : t option) (pid : Parser.id) =
@@ -23,12 +28,12 @@ let id_of (parent : t option) (pid : Parser.id) =
       let version = get_or_fail "version" pid.version in
       (group, artifact, version)
 
-let dep_of (parent : t option) (deps : string option Ga_map.t) =
+let dep_of (parent : t option) (deps : dep Ga_map.t) =
   match parent with
   | Some p -> Ga_map.merge p.deps deps
   | None -> deps
 
-let dep_mgmt_of (parent : t option) (dm : string Ga_map.t) =
+let dep_mgmt_of (parent : t option) (dm : dm Ga_map.t) =
   match parent with
   | Some p -> Ga_map.merge p.dep_mgmt dm
   | None -> dm
@@ -53,7 +58,11 @@ let read_pom (m2dir : string) ref_fname =
 
     let id : id = id_of parent parsed.id in
 
-    let dm_fn ({ group; artifact; version } : Parser.dm) = ((group, artifact), version) in
+    let dm_fn ({ group; artifact; version; scope; tp } : Parser.dm) =
+      let is_bom = scope = Some("import") && tp = Some("pom") in
+      let v : dm = { version; is_bom } in
+      ((group, artifact), v)
+    in
     let dep_mgmt = Ga_map.from_list dm_fn parsed.dep_mgmt |> dep_mgmt_of parent in
 
     let dp_fn ({ group; artifact; version } : Parser.dep) = ((group, artifact), version) in

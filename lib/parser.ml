@@ -12,8 +12,14 @@ type dm = {
   group: string;
   artifact: string;
   version: string;
+  scope: string option;
+  tp: string option;
 }
-type parent = dm
+type parent = {
+  group: string;
+  artifact: string;
+  version: string;
+}
 
 type t = {
   parent: parent option;
@@ -55,10 +61,12 @@ let dep_mgmt_of : Xmelly.t -> dm = function
       let group = find "groupId" in
       let artifact = find "artifactId" in
       let version = find "version" in
-      { group; artifact; version }
+      let scope = find_text "scope" l in
+      let tp = find_text "type" l in
+      { group; artifact; version; scope; tp  }
   | _ -> failwith "found weird stuff inside dependencies of dependency management"
 
-let parent_of (l : Xmelly.t list) : dm =
+let parent_of (l : Xmelly.t list) : parent =
   let find f = find_text f l |> get_or_fail (f ^ " is not set in parent") in
   let group = find "groupId" in
   let artifact = find "artifactId" in
