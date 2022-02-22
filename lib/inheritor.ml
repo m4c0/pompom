@@ -28,6 +28,11 @@ let dep_of (parent : t option) (deps : string option Ga_map.t) =
   | Some p -> Ga_map.merge p.deps deps
   | None -> deps
 
+let dep_mgmt_of (parent : t option) (dm : string Ga_map.t) =
+  match parent with
+  | Some p -> Ga_map.merge p.dep_mgmt dm
+  | None -> dm
+
 let read_pom (m2dir : string) ref_fname =
   let rec parse_parent_pom (cfn : string) (pid : Parser.parent) : t =
     let pfld = Filename.dirname cfn |> Filename.dirname in
@@ -49,7 +54,7 @@ let read_pom (m2dir : string) ref_fname =
     let id : id = id_of parent parsed.id in
 
     let dm_fn ({ group; artifact; version } : Parser.dm) = ((group, artifact), version) in
-    let dep_mgmt = Ga_map.from_list dm_fn parsed.dep_mgmt in
+    let dep_mgmt = Ga_map.from_list dm_fn parsed.dep_mgmt |> dep_mgmt_of parent in
 
     let dp_fn ({ group; artifact; version } : Parser.dep) = ((group, artifact), version) in
     let deps = Ga_map.from_list dp_fn parsed.deps |> dep_of parent in

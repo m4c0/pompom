@@ -1,8 +1,10 @@
-type t = Inheritor.t
+type t = {
+  id : string * string * string;
+  deps : string Ga_map.t;
+}
 
 let iter_deps fn (tt : t) =
-  let f k v = fn k (Option.value ~default:"" v) in
-  Ga_map.iter f tt.deps
+  Ga_map.iter fn tt.deps
 
 let from_java m2dir fname =
   let rec pom_of fname = 
@@ -11,4 +13,7 @@ let from_java m2dir fname =
     then pom
     else fname |> Filename.dirname |> pom_of
   in
-  pom_of fname |> Inheritor.read_pom m2dir
+  let i = pom_of fname |> Inheritor.read_pom m2dir in
+  let deps = Deps.resolve i.dep_mgmt i.deps in
+  { id = i.id; deps }
+

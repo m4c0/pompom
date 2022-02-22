@@ -28,4 +28,6 @@ let merge am bm =
   in
   GAMap.merge fn am bm
 
-let iter fn m = GAMap.iter fn m
+let find_opt = GAMap.find_opt
+let iter = GAMap.iter
+let mapi = GAMap.mapi
