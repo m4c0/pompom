@@ -1,76 +1,82 @@
 type id = {
   group: string option;
-  artifact: string option;
+  artifact: string;
   version: string option;
 }
+type dep = {
+  group: string;
+  artifact: string;
+  version: string option;
+}
+type dm = {
+  group: string;
+  artifact: string;
+  version: string;
+}
+type parent = dm
+
 type t = {
-  parent: id;
+  parent: parent option;
   id: id;
-  deps: id list;
-  dep_mgmt: id list;
+  deps: dep list;
+  dep_mgmt: dm list;
 }
 
-let empty_id : id = {
-  group = None;
-  artifact = None;
-  version = None;
-}
-let empty : t = {
-  parent = empty_id;
-  id = empty_id;
-  deps = [];
-  dep_mgmt = [];
-}
-
-let text_of (l : Xmelly.t list) : string option =
-  match l with
-  | [Text t] -> Some(t)
-  | _ -> None
-
-let rec id_of (l : Xmelly.t list) : id =
-  match l with
-  | [] -> empty_id
-  | Element("groupId", _, el) :: ll ->
-      { (id_of ll) with group = (text_of el) }
-  | Element("artifactId", _, el) :: ll ->
-      { (id_of ll) with artifact = (text_of el) }
-  | Element("version", _, el) :: ll ->
-      { (id_of ll) with version = (text_of el) }
-  | _ :: ll -> id_of ll
-
-let deps_of (l : Xmelly.t list) : id list =
-  let dep_of (xml : Xmelly.t) =
-    match xml with
-    | Element("dependency", _, el) -> id_of el
-    | Element(x, _, _) -> x ^ " was unexpected inside dependencies" |> failwith
-    | _ -> failwith "unexpected thing inside dependencies"
+let find_element (t : string) (l : Xmelly.t list) : Xmelly.t list option =
+  let fn : Xmelly.t -> Xmelly.t list option  = function
+    | Element(x, _, xs) when x = t -> Some xs
+    | _ -> None
   in
-  l |> List.map dep_of
+  List.find_map fn l
 
-let dep_mgmt_of (l : Xmelly.t list) : id list =
-  match l with
-  | [Element("dependencies", _, el)] -> deps_of el
-  | _ -> failwith "unexpected thing inside dependencyManagement"
+let find_text (t : string) (l : Xmelly.t list) : string option =
+  let fn : Xmelly.t -> string option  = function
+    | Element(x, _, [Text tt]) when x = t -> Some tt
+    | _ -> None
+  in
+  List.find_map fn l
 
-let rec project_of (l : Xmelly.t list) : t =
-  match l with
-  | [] -> empty
-  | Element("parent", _, el) :: ll ->
-      { (project_of ll) with parent = (id_of el) }
-  | Element("groupId", _, el) :: ll ->
-      let res = project_of ll in
-      { res with id = { res.id with group = (text_of el) } }
-  | Element("artifactId", _, el) :: ll ->
-      let res = project_of ll in
-      { res with id = { res.id with artifact = (text_of el) } }
-  | Element("version", _, el) :: ll ->
-      let res = project_of ll in
-      { res with id = { res.id with version = (text_of el) } }
-  | Element("dependencies", _, el) :: ll ->
-      { (project_of ll) with deps = (deps_of el) }
-  | Element("dependencyManagement", _, el) :: ll ->
-      { (project_of ll) with dep_mgmt = (dep_mgmt_of el) }
-  | _ :: ll -> project_of ll
+let get_or_fail msg = function
+  | Some x -> x
+  | None -> failwith msg
+
+let dep_of : Xmelly.t -> dep = function
+  | Element("dependency", _, l) -> 
+      let find f = find_text f l |> get_or_fail (f ^ " is not set in dependency") in
+      let group = find "groupId" in
+      let artifact = find "artifactId" in
+      let version = find_text "version" l in
+      { group; artifact; version }
+  | _ -> failwith "found weird stuff inside dependencies"
+
+let dep_mgmt_of : Xmelly.t -> dm = function
+  | Element("dependency", _, l) -> 
+      let find f = find_text f l |> get_or_fail (f ^ " is not set in dependency management") in
+      let group = find "groupId" in
+      let artifact = find "artifactId" in
+      let version = find "version" in
+      { group; artifact; version }
+  | _ -> failwith "found weird stuff inside dependencies of dependency management"
+
+let parent_of (l : Xmelly.t list) : dm =
+  let find f = find_text f l |> get_or_fail (f ^ " is not set in parent") in
+  let group = find "groupId" in
+  let artifact = find "artifactId" in
+  let version = find "version" in
+  { group; artifact; version }
+
+let project_of (l : Xmelly.t list) : t =
+  let parent = find_element "parent" l |> Option.map parent_of in
+  let group = find_text "groupId" l in
+  let artifact = find_text "artifactId" l |> get_or_fail "artifactId not set" in
+  let version = find_text "version" l in
+  let id : id = { group; artifact; version } in
+  let deps = find_element "dependencies" l |> Option.value ~default:[] |> List.map dep_of in
+  let dep_mgmt =
+    find_element "dependencyManagement" l |> Option.value ~default:[] |>
+    find_element "dependencies" |> Option.value ~default:[] |>
+    List.map dep_mgmt_of in
+  { parent; id; deps; dep_mgmt }
 
 let from_smelly (xml : Xmelly.t) =
   match xml with

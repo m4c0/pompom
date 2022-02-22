@@ -25,6 +25,6 @@ let () =
 
     print_string indent;
     print_endline "deps:";
-    p.deps |> List.iter (print ni)
+    Pompom.iter_deps (fun (g, a) v -> print ni (g, a, v)) p
   in
   Pompom.from_java !m2 !java |> printobj ""
