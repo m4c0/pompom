@@ -6,26 +6,6 @@
   >   <groupId>dep</groupId>
   >   <artifactId>one</artifactId>
   >   <version>9</version>
-  >   <dependencyManagement>
-  >     <dependencies>
-  >       <dependency>
-  >         <groupId>dep</groupId>
-  >         <artifactId>two</artifactId>
-  >         <version>8</version>
-  >       </dependency>
-  >     </dependencies>
-  >   </dependencyManagement>
-  > </project>
-  > EOF
-
-  $ mkdir -p repo/dep/two/8
-
-  $ cat > repo/dep/two/8/two-8.pom <<EOF
-  > <?xml version="1.0"?>
-  > <project>
-  >   <groupId>dep</groupId>
-  >   <artifactId>two</artifactId>
-  >   <version>8</version>
   > </project>
   > EOF
 
@@ -63,10 +43,6 @@
   >       <groupId>dep</groupId>
   >       <artifactId>one</artifactId>
   >     </dependency>
-  >     <dependency>
-  >       <groupId>dep</groupId>
-  >       <artifactId>two</artifactId>
-  >     </dependency>
   >   </dependencies>
   > </project>
   > EOF
@@ -75,4 +51,3 @@
   id: iam:world-1
   deps:
     dep:one-9
-    dep:two-8
