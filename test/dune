@@ -1,5 +1,10 @@
 (executable
  (name pomdump)
- (libraries pompom))
+ (libraries pompom)
+ (modules pomdump))
 
-(cram (deps pomdump.exe))
+(executable
+ (name xml)
+ (modules xml))
+
+(cram (deps pomdump.exe xml.exe))

@@ -1,22 +1,5 @@
-  $ mkdir -p repo/dep/one/9
-
-  $ cat > repo/dep/one/9/one-9.pom <<EOF
-  > <?xml version="1.0"?>
-  > <project>
-  >   <groupId>dep</groupId>
-  >   <artifactId>one</artifactId>
-  >   <version>9</version>
-  > </project>
-  > EOF
-
-  $ mkdir -p repo/iam/parent/1
-
-  $ cat > repo/iam/parent/1/parent-1.pom <<EOF
-  > <?xml version="1.0"?>
-  > <project>
-  >   <groupId>iam</groupId>
-  >   <artifactId>parent</artifactId>
-  >   <version>1</version>
+  $ ./xml.exe dep one 9
+  $ ./xml.exe iam parent 1 <<EOF
   >   <dependencyManagement>
   >     <dependencies>
   >       <dependency>
@@ -26,7 +9,6 @@
   >       </dependency>
   >     </dependencies>
   >   </dependencyManagement>
-  > </project>
   > EOF
 
   $ cat > pom.xml <<EOF

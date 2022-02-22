@@ -1,11 +1,4 @@
-  $ mkdir -p repo/iam/grampa/2
-
-  $ cat > repo/iam/grampa/2/grampa-2.pom <<EOF
-  > <?xml version="1.0"?>
-  > <project>
-  >   <groupId>iam</groupId>
-  >   <artifactId>grampa</artifactId>
-  >   <version>2</version>
+  $ ./xml.exe iam grampa 2 <<EOF
   >   <dependencies>
   >     <dependency>
   >       <groupId>dep</groupId>
@@ -13,22 +6,14 @@
   >       <version>9</version>
   >     </dependency>
   >   </dependencies>
-  > </project>
   > EOF
 
-  $ mkdir -p repo/iam/parent/1
-
-  $ cat > repo/iam/parent/1/parent-1.pom <<EOF
-  > <?xml version="1.0"?>
-  > <project>
+  $ ./xml.exe iam parent 1 <<EOF
   >   <parent>
   >     <groupId>iam</groupId>
   >     <artifactId>grampa</artifactId>
   >     <version>2</version>
   >   </parent>
-  >   <groupId>iam</groupId>
-  >   <artifactId>parent</artifactId>
-  >   <version>1</version>
   >   <dependencies>
   >     <dependency>
   >       <groupId>dep</groupId>
@@ -36,7 +21,6 @@
   >       <version>8</version>
   >     </dependency>
   >   </dependencies>
-  > </project>
   > EOF
 
   $ cat > pom.xml <<EOF
