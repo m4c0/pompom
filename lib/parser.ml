@@ -20,12 +20,14 @@ type parent = {
   artifact: string;
   version: string;
 }
+type prop = string * string
 
 type t = {
   parent: parent option;
   id: id;
   deps: dep list;
   dep_mgmt: dm list;
+  props: prop list;
 }
 
 let find_element (t : string) (l : Xmelly.t list) : Xmelly.t list option =
@@ -66,6 +68,11 @@ let dep_mgmt_of : Xmelly.t -> dm = function
       { group; artifact; version; scope; tp  }
   | _ -> failwith "found weird stuff inside dependencies of dependency management"
 
+let prop_of : Xmelly.t -> prop = function
+  | Element(key, _, [Text v]) -> (key, v)
+  | Element(x, _, _) -> failwith (x ^ ": invalid property format")
+  | Text(x) -> failwith (x ^ ": loose text found inside properties")
+
 let parent_of (l : Xmelly.t list) : parent =
   let find f = find_text f l |> get_or_fail (f ^ " is not set in parent") in
   let group = find "groupId" in
@@ -84,7 +91,10 @@ let project_of (l : Xmelly.t list) : t =
     find_element "dependencyManagement" l |> Option.value ~default:[] |>
     find_element "dependencies" |> Option.value ~default:[] |>
     List.map dep_mgmt_of in
-  { parent; id; deps; dep_mgmt }
+  let props = 
+    find_element "properties" l |> Option.value ~default:[] |>
+    List.map prop_of in
+  { parent; id; deps; dep_mgmt; props }
 
 let from_smelly (xml : Xmelly.t) =
   match xml with

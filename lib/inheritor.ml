@@ -1,3 +1,6 @@
+module PropMap = Map.Make(String)
+type prop_map = string PropMap.t
+
 type id = string * string * string
 type dep = string option
 type dm = string
@@ -6,6 +9,7 @@ type t = {
   deps: dep Ga_map.t;
   dep_mgmt: string Ga_map.t;
   boms: string Ga_map.t;
+  props: prop_map; 
 }
 
 let id_of (parent : t option) (pid : Parser.id) =
@@ -40,6 +44,11 @@ let bom_of (parent : t option) (boms : dm Ga_map.t) =
   match parent with
   | Some p -> Ga_map.merge p.boms boms
   | None -> boms
+
+let props_of (parent : t option) (props : prop_map) =
+  match parent with
+  | Some p -> PropMap.merge Map_utils.parent_merger p.props props
+  | None -> props
 
 let fname_of m2dir group artifact version =
   let fn = artifact ^ "-" ^ version ^ ".pom" in
@@ -78,7 +87,9 @@ let read_pom (m2dir : string) ref_fname =
     let dp_fn ({ group; artifact; version } : Parser.dep) = ((group, artifact), version) in
     let deps = Ga_map.from_list dp_fn parsed.deps |> dep_of parent in
 
-    { id; deps; dep_mgmt; boms }
+    let props = List.to_seq parsed.props |> PropMap.of_seq |> props_of parent in
+
+    { id; deps; dep_mgmt; boms; props }
   in
   Parser.parse_file ref_fname |> stitch_pom ref_fname
 

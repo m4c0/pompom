@@ -1,3 +1,3 @@
 (library
  (public_name pompom)
- (libraries xmelly))
+ (libraries str xmelly))

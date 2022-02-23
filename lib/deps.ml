@@ -34,7 +34,18 @@ let dep_from (dm : bom) (g, a) = function
       | Some x -> x
       | None -> "could not find version for " ^ g ^ ":" ^ a |> failwith
 
+let prop_regex = Str.regexp "\\${\\(.*\\)}"
+let dep_with_prop_from (i : Inheritor.t) k v : string =
+  let fn pp =
+    let p = Str.matched_group 1 pp in
+    match Inheritor.PropMap.find_opt p i.props with
+    | Some x -> x
+    | None -> failwith (p ^ ": property not found")
+  in
+  dep_from i.dep_mgmt k v |>
+  Str.global_substitute prop_regex fn
+
 let resolve m2dir pom_fname : id * bom =
   let i = Inheritor.read_pom m2dir pom_fname |> merge_tree m2dir in
-  let deps = Ga_map.mapi (dep_from i.dep_mgmt) i.deps in
+  let deps = Ga_map.mapi (dep_with_prop_from i) i.deps in
   (i.id, deps)

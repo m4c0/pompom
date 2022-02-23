@@ -19,14 +19,7 @@ let from_list fn l =
   List.fold_left f GAMap.empty l
 
 let merge am bm =
-  let fn _ a b = 
-    match (a, b) with
-    | None, None -> None
-    | Some aa, None -> Some aa
-    | None, Some bb -> Some bb
-    | Some _, Some bb -> Some bb
-  in
-  GAMap.merge fn am bm
+  GAMap.merge Map_utils.parent_merger am bm
 
 let filter_map = GAMap.filter_map
 let find_opt = GAMap.find_opt
