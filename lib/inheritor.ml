@@ -36,6 +36,17 @@ let dep_mgmt_of (parent : t option) (dm : dm Ga_map.t) =
   | Some p -> Ga_map.merge p.dep_mgmt dm
   | None -> dm
 
+let bom_of (parent : t option) (boms : dm Ga_map.t) =
+  match parent with
+  | Some p -> Ga_map.merge p.boms boms
+  | None -> boms
+
+let fname_of m2dir group artifact version =
+  let fn = artifact ^ "-" ^ version ^ ".pom" in
+  (String.split_on_char '.' group)
+  @ [ artifact; version; fn ]
+  |> List.fold_left Filename.concat m2dir
+
 let read_pom (m2dir : string) ref_fname =
   let rec parse_parent_pom (cfn : string) (pid : Parser.parent) : t =
     let pfld = Filename.dirname cfn |> Filename.dirname in
@@ -44,12 +55,7 @@ let read_pom (m2dir : string) ref_fname =
     then Parser.parse_file pfn |> stitch_pom pfn
     else
       let { group; artifact; version } : Parser.parent = pid in
-      let fn = artifact ^ "-" ^ version ^ ".pom" in
-      let repofn =
-        (String.split_on_char '.' group)
-        @ [ artifact; version; fn ]
-        |> List.fold_left Filename.concat m2dir
-      in
+      let repofn = fname_of m2dir group artifact version in
       Parser.parse_file repofn |> stitch_pom repofn
   and stitch_pom (fname : string) (parsed : Parser.t) : t =
     let parent = Option.map (parse_parent_pom fname) parsed.parent in
@@ -59,14 +65,14 @@ let read_pom (m2dir : string) ref_fname =
     let is_bom ({ scope; tp; _ } : Parser.dm) = scope = Some("import") && tp = Some("pom") in
     let dm_fn ({ group; artifact; version; _ } : Parser.dm) = ((group, artifact), version) in
     let dep_mgmt = 
-      List.filter is_bom parsed.dep_mgmt |>
+      List.filter (Fun.negate is_bom) parsed.dep_mgmt |>
       Ga_map.from_list dm_fn |>
       dep_mgmt_of parent
     in
     let boms = 
-      List.filter (Fun.negate is_bom) parsed.dep_mgmt |>
+      List.filter is_bom parsed.dep_mgmt |>
       Ga_map.from_list dm_fn |>
-      dep_mgmt_of parent
+      bom_of parent
     in
 
     let dp_fn ({ group; artifact; version } : Parser.dep) = ((group, artifact), version) in
@@ -75,3 +81,6 @@ let read_pom (m2dir : string) ref_fname =
     { id; deps; dep_mgmt; boms }
   in
   Parser.parse_file ref_fname |> stitch_pom ref_fname
+
+let read_pom_of_id m2dir grp art ver = fname_of m2dir grp art ver |> read_pom m2dir
+
