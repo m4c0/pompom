@@ -13,9 +13,6 @@ let from_java m2dir fname =
     then pom
     else fname |> Filename.dirname |> pom_of
   in
-  let i = pom_of fname |> Inheritor.read_pom m2dir in
-  let fmap _ (dm : Inheritor.dm) = if dm.is_bom then None else Some dm.version in
-  let dm = Ga_map.filter_map fmap i.dep_mgmt in
-  let deps = Deps.resolve dm i.deps in
-  { id = i.id; deps }
+  let (id, deps) = pom_of fname |> Deps.resolve m2dir in
+  { id; deps }
 

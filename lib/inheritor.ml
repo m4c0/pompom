@@ -1,13 +1,11 @@
 type id = string * string * string
 type dep = string option
-type dm = {
-  version: string; 
-  is_bom: bool;
-}
+type dm = string
 type t = {
   id: id;
   deps: dep Ga_map.t;
-  dep_mgmt: dm Ga_map.t;
+  dep_mgmt: string Ga_map.t;
+  boms: string Ga_map.t;
 }
 
 let id_of (parent : t option) (pid : Parser.id) =
@@ -58,16 +56,22 @@ let read_pom (m2dir : string) ref_fname =
 
     let id : id = id_of parent parsed.id in
 
-    let dm_fn ({ group; artifact; version; scope; tp } : Parser.dm) =
-      let is_bom = scope = Some("import") && tp = Some("pom") in
-      let v : dm = { version; is_bom } in
-      ((group, artifact), v)
+    let is_bom ({ scope; tp; _ } : Parser.dm) = scope = Some("import") && tp = Some("pom") in
+    let dm_fn ({ group; artifact; version; _ } : Parser.dm) = ((group, artifact), version) in
+    let dep_mgmt = 
+      List.filter is_bom parsed.dep_mgmt |>
+      Ga_map.from_list dm_fn |>
+      dep_mgmt_of parent
     in
-    let dep_mgmt = Ga_map.from_list dm_fn parsed.dep_mgmt |> dep_mgmt_of parent in
+    let boms = 
+      List.filter (Fun.negate is_bom) parsed.dep_mgmt |>
+      Ga_map.from_list dm_fn |>
+      dep_mgmt_of parent
+    in
 
     let dp_fn ({ group; artifact; version } : Parser.dep) = ((group, artifact), version) in
     let deps = Ga_map.from_list dp_fn parsed.deps |> dep_of parent in
 
-    { id; deps; dep_mgmt }
+    { id; deps; dep_mgmt; boms }
   in
   Parser.parse_file ref_fname |> stitch_pom ref_fname

@@ -1,4 +1,7 @@
-let resolve (dm : string Ga_map.t) (deps : string option Ga_map.t) : string Ga_map.t =
+type id = string * string * string
+type bom = string Ga_map.t
+
+let merge_deps (dm : bom) (deps : string option Ga_map.t) : bom =
   let fn (g, a) (v : string option) =
     match v with
     | Some x -> x
@@ -9,3 +12,7 @@ let resolve (dm : string Ga_map.t) (deps : string option Ga_map.t) : string Ga_m
   in
   Ga_map.mapi fn deps
 
+let resolve m2dir pom_fname : id * bom =
+  let i = Inheritor.read_pom m2dir pom_fname in
+  let deps = merge_deps i.dep_mgmt i.deps in
+  (i.id, deps)
