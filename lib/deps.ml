@@ -1,6 +1,16 @@
 type id = string * string * string
 type bom = string Ga_map.t
 
+let prop_regex = Str.regexp "\\${\\(.*\\)}"
+let apply_props (i : Inheritor.t) (s : string) : string =
+  let fn pp =
+    let p = Str.matched_group 1 pp in
+    match Inheritor.PropMap.find_opt p i.props with
+    | Some x -> x
+    | None -> failwith (p ^ ": property not found")
+  in
+  Str.global_substitute prop_regex fn s
+
 let merge_deps (dm : bom) (deps : string option Ga_map.t) : bom =
   let fn (g, a) (v : string option) =
     match v with
@@ -14,7 +24,8 @@ let merge_deps (dm : bom) (deps : string option Ga_map.t) : bom =
 
 let rec merge_tree (m2dir : string) (i : Inheritor.t) =
   let read_merge ((g, a), v) =
-    Inheritor.read_pom_of_id m2dir g a v |>
+    apply_props i v |>
+    Inheritor.read_pom_of_id m2dir g a |>
     merge_tree m2dir
   in
   let folder (acc : Inheritor.t) (i : Inheritor.t) =
@@ -34,16 +45,9 @@ let dep_from (dm : bom) (g, a) = function
       | Some x -> x
       | None -> "could not find version for " ^ g ^ ":" ^ a |> failwith
 
-let prop_regex = Str.regexp "\\${\\(.*\\)}"
 let dep_with_prop_from (i : Inheritor.t) k v : string =
-  let fn pp =
-    let p = Str.matched_group 1 pp in
-    match Inheritor.PropMap.find_opt p i.props with
-    | Some x -> x
-    | None -> failwith (p ^ ": property not found")
-  in
   dep_from i.dep_mgmt k v |>
-  Str.global_substitute prop_regex fn
+  apply_props i
 
 let resolve m2dir pom_fname : id * bom =
   let i = Inheritor.read_pom m2dir pom_fname |> merge_tree m2dir in
