@@ -18,7 +18,6 @@ let from_java m2dir fname =
     then pom
     else fname |> Filename.dirname |> pom_of
   in
-  let (id, deps) = pom_of fname |> Deps.resolve m2dir in
-  let modules = [] in
+  let (id, deps, modules) = pom_of fname |> Deps.resolve m2dir in
   { id; deps; modules }
 

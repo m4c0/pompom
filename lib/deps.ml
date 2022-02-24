@@ -1,5 +1,6 @@
 type id = string * string * string
 type bom = string Ga_map.t
+type modules = string list
 
 let prop_regex = Str.regexp "\\${\\(.*\\)}"
 let rec apply_props (i : Inheritor.t) (s : string) : string =
@@ -50,7 +51,7 @@ let dep_with_prop_from (i : Inheritor.t) k v : string =
   dep_from i.dep_mgmt k v |>
   apply_props i
 
-let resolve m2dir pom_fname : id * bom =
+let resolve m2dir pom_fname : id * bom * modules =
   let i = Inheritor.read_pom m2dir pom_fname |> merge_tree m2dir in
   let deps = Ga_map.mapi (dep_with_prop_from i) i.deps in
-  (i.id, deps)
+  (i.id, deps, i.modules)

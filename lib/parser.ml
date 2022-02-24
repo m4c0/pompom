@@ -28,6 +28,7 @@ type t = {
   deps: dep list;
   dep_mgmt: dm list;
   props: prop list;
+  modules: string list;
 }
 
 let find_element (t : string) (l : Xmelly.t list) : Xmelly.t list option =
@@ -74,6 +75,11 @@ let prop_of : Xmelly.t -> prop = function
   | Element(x, _, _) -> failwith (x ^ ": invalid property format")
   | Text(x) -> failwith (x ^ ": loose text found inside properties")
 
+let module_of : Xmelly.t -> string = function
+  | Element("module", _, [Text m]) -> m
+  | Element(x, _, _) -> failwith (x ^ ": invalid module format")
+  | Text(x) -> failwith (x ^ ": loose text found inside modules")
+
 let parent_of (l : Xmelly.t list) : parent =
   let find f = find_text f l |> get_or_fail (f ^ " is not set in parent") in
   let group = find "groupId" in
@@ -95,7 +101,10 @@ let project_of (l : Xmelly.t list) : t =
   let props = 
     find_element "properties" l |> Option.value ~default:[] |>
     List.map prop_of in
-  { parent; id; deps; dep_mgmt; props }
+  let modules = 
+    find_element "modules" l |> Option.value ~default:[] |>
+    List.map module_of in
+  { parent; id; deps; dep_mgmt; props; modules }
 
 let from_smelly (xml : Xmelly.t) =
   match xml with

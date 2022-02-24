@@ -10,6 +10,7 @@ type t = {
   dep_mgmt: string Ga_map.t;
   boms: string Ga_map.t;
   props: prop_map; 
+  modules: string list;
 }
 
 let id_of (parent : t option) (pid : Parser.id) =
@@ -89,7 +90,9 @@ let read_pom (m2dir : string) ref_fname =
 
     let props = List.to_seq parsed.props |> PropMap.of_seq |> props_of parent in
 
-    { id; deps; dep_mgmt; boms; props }
+    let modules = parsed.modules in
+
+    { id; deps; dep_mgmt; boms; props; modules }
   in
   Parser.parse_file ref_fname |> stitch_pom ref_fname
 
