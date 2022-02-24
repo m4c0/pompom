@@ -5,8 +5,9 @@
   >   <artifactId>props</artifactId>
   >   <version>1.0</version>
   >   <properties>
-  >     <dep.one.ver>2.2</dep.one.ver>
+  >     <dep.one.ver>\${recurse}</dep.one.ver>
   >     <empty.prop></empty.prop>
+  >     <recurse>2.2</recurse>
   >   </properties>
   >   <dependencies>
   >     <dependency>

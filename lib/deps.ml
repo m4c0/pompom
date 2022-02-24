@@ -2,14 +2,15 @@ type id = string * string * string
 type bom = string Ga_map.t
 
 let prop_regex = Str.regexp "\\${\\(.*\\)}"
-let apply_props (i : Inheritor.t) (s : string) : string =
+let rec apply_props (i : Inheritor.t) (s : string) : string =
   let fn pp =
     let p = Str.matched_group 1 pp in
     match Inheritor.PropMap.find_opt p i.props with
     | Some x -> x
     | None -> failwith (p ^ ": property not found")
   in
-  Str.global_substitute prop_regex fn s
+  let res = Str.global_substitute prop_regex fn s in
+  if res = s then res else apply_props i res
 
 let merge_deps (dm : bom) (deps : string option Ga_map.t) : bom =
   let fn (g, a) (v : string option) =
