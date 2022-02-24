@@ -40,3 +40,4 @@
   deps:
     dep:one-9
     dep:two-8
+  modules:

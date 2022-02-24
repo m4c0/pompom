@@ -20,3 +20,4 @@
   id: cdata:everywhere-0
   deps:
     cdata:dep-version
+  modules:

@@ -11,6 +11,7 @@
   $ ./pomdump.exe -j Test.java -m repo
   id: got:deps-0
   deps:
+  modules:
 
   $ cat > pom.xml <<EOF
   > <?xml version="1.0"?>
@@ -38,3 +39,4 @@
   deps:
     dep:one-99
     dep:two-98
+  modules:

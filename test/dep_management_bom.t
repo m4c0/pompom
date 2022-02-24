@@ -47,3 +47,4 @@
   id: iam:world-1
   deps:
     dep:two-8
+  modules:

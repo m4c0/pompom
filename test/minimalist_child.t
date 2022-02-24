@@ -24,3 +24,4 @@
   id: iam:world-1
   deps:
     dep:one-9
+  modules:

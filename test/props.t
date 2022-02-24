@@ -23,3 +23,4 @@
   id: using:props-1.0
   deps:
     dep:one-2.2
+  modules:

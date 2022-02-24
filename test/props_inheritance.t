@@ -56,3 +56,4 @@
     from-child:using-parent-prop-v
     from-parent:using-child-prop-v
     from-parent:using-dep-mgmt-v
+  modules:

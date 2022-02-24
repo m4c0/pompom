@@ -14,6 +14,10 @@ let () =
   Arg.parse speclist anon_fn usage_msg;
   if !java = "" then failwith "Missing input";
 
+  let print_indent i str =
+    print_string i;
+    print_endline str
+  in
   let print indent (group, artifact, version) =
     Printf.printf "%s%s:%s-%s\n" indent group artifact version
   in
@@ -23,8 +27,10 @@ let () =
     print_string "id: ";
     print "" p.id;
 
-    print_string indent;
-    print_endline "deps:";
-    Pompom.deps_seq p |> Seq.iter (print ni)
+    print_indent indent "deps:";
+    Pompom.deps_seq p |> Seq.iter (print ni);
+
+    print_indent indent "modules:";
+    Pompom.modules_seq p |> Seq.iter (print_indent ni)
   in
   Pompom.from_java !m2 !java |> printobj ""

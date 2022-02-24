@@ -33,3 +33,4 @@
   $ ./pomdump.exe -j Test.java -m repo
   id: hello:world-1.0
   deps:
+  modules:
