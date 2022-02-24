@@ -70,6 +70,7 @@ let dep_mgmt_of : Xmelly.t -> dm = function
 
 let prop_of : Xmelly.t -> prop = function
   | Element(key, _, [Text v]) -> (key, v)
+  | Element(key, _, []) -> (key, "")
   | Element(x, _, _) -> failwith (x ^ ": invalid property format")
   | Text(x) -> failwith (x ^ ": loose text found inside properties")
 

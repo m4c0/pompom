@@ -6,6 +6,7 @@
   >   <version>1.0</version>
   >   <properties>
   >     <dep.one.ver>2.2</dep.one.ver>
+  >     <empty.prop></empty.prop>
   >   </properties>
   >   <dependencies>
   >     <dependency>
