@@ -3,8 +3,9 @@ type t = {
   deps : string Ga_map.t;
 }
 
-let iter_deps fn (tt : t) =
-  Ga_map.iter fn tt.deps
+let deps_seq (tt : t) : (string * string * string) Seq.t =
+  Ga_map.to_seq tt.deps
+  |> Seq.map (fun ((g, a), v) -> (g, a, v))
 
 let from_java m2dir fname =
   let rec pom_of fname = 
