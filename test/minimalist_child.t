@@ -1,3 +1,4 @@
+  $ ./xml.exe dep one 9 
   $ ./xml.exe iam parent 1 <<EOF
   >   <dependencies>
   >     <dependency>

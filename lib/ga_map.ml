@@ -25,4 +25,5 @@ let filter_map = GAMap.filter_map
 let find_opt = GAMap.find_opt
 let iter = GAMap.iter
 let mapi = GAMap.mapi
+let of_seq = GAMap.of_seq
 let to_seq = GAMap.to_seq

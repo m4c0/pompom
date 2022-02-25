@@ -1,3 +1,5 @@
+  $ ./xml.exe dep one 99
+  $ ./xml.exe dep two 98
   $ cat > pom.xml <<EOF
   > <?xml version="1.0"?>
   > <project>

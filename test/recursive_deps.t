@@ -1,3 +1,5 @@
+  $ ./xml.exe dep one 9
+  $ ./xml.exe dep two 8
   $ ./xml.exe iam grampa 2 <<EOF
   >   <dependencies>
   >     <dependency>

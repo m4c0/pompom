@@ -1,3 +1,4 @@
+  $ ./xml.exe dep one 2.2
   $ cat > pom.xml <<EOF
   > <?xml version="1.0"?>
   > <project>

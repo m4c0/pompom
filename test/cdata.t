@@ -1,3 +1,4 @@
+  $ ./xml.exe cdata dep version
   $ cat > pom.xml <<EOF
   > <?xml version="1.0"?>
   > <project>

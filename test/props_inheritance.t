@@ -1,4 +1,7 @@
   $ ./xml.exe using bom v
+  $ ./xml.exe from-child using-parent-prop v
+  $ ./xml.exe from-parent using-child-prop v
+  $ ./xml.exe from-parent using-dep-mgmt v
   $ ./xml.exe using parent 1.0 <<EOF
   > <properties><parent-prop>v</parent-prop></properties>
   > <dependencyManagement>
