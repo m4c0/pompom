@@ -51,13 +51,17 @@ let props_of (parent : t option) (props : prop_map) =
   | Some p -> PropMap.merge Map_utils.parent_merger p.props props
   | None -> props
 
-let fname_of m2dir group artifact version =
+let m2dir = 
+  [ Sys.getenv "HOME"; ".m2"; "repository" ] |>
+  List.fold_left Filename.concat ""
+
+let fname_of group artifact version =
   let fn = artifact ^ "-" ^ version ^ ".pom" in
   (String.split_on_char '.' group)
   @ [ artifact; version; fn ]
   |> List.fold_left Filename.concat m2dir
 
-let read_pom (m2dir : string) ref_fname =
+let read_pom ref_fname =
   let rec parse_parent_pom (cfn : string) (pid : Parser.parent) : t =
     let pfld = Filename.dirname cfn |> Filename.dirname in
     let pfn = Filename.concat pfld "pom.xml" in
@@ -65,7 +69,7 @@ let read_pom (m2dir : string) ref_fname =
     then Parser.parse_file pfn |> stitch_pom pfn
     else
       let { group; artifact; version } : Parser.parent = pid in
-      let repofn = fname_of m2dir group artifact version in
+      let repofn = fname_of group artifact version in
       Parser.parse_file repofn |> stitch_pom repofn
   and stitch_pom (fname : string) (parsed : Parser.t) : t =
     let parent = Option.map (parse_parent_pom fname) parsed.parent in
@@ -96,5 +100,5 @@ let read_pom (m2dir : string) ref_fname =
   in
   Parser.parse_file ref_fname |> stitch_pom ref_fname
 
-let read_pom_of_id m2dir grp art ver = fname_of m2dir grp art ver |> read_pom m2dir
+let read_pom_of_id grp art ver = fname_of grp art ver |> read_pom
 

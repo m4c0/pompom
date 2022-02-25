@@ -1,13 +1,7 @@
 let () =
   let java = ref "" in
-  let m2 = 
-    [ Sys.getenv "HOME"; ".m2"; "repository" ] |>
-    List.fold_left Filename.concat "" |>
-    ref
-  in
   let speclist = [
     ("-j", Arg.Set_string java, "Path to a Java source. POM will be infered from that.");
-    ("-m", Arg.Set_string m2, "Path to M2's repo dir. Defaults to '$HOME/.m2/repo'")
   ] in
   let anon_fn x = failwith (x ^ ": invalid option") in
   let usage_msg = Sys.argv.(0) ^ " -j <path-to-java>" in
@@ -33,4 +27,4 @@ let () =
     print_indent indent "modules:";
     Pompom.modules_seq p |> Seq.iter (print_indent ni)
   in
-  Pompom.from_java !m2 !java |> printobj ""
+  Pompom.from_java !java |> printobj ""

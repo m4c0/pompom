@@ -24,11 +24,11 @@ let merge_deps (dm : bom) (deps : string option Ga_map.t) : bom =
   in
   Ga_map.mapi fn deps
 
-let rec merge_tree (m2dir : string) (i : Inheritor.t) =
+let rec merge_tree (i : Inheritor.t) =
   let read_merge ((g, a), v) =
     apply_props i v |>
-    Inheritor.read_pom_of_id m2dir g a |>
-    merge_tree m2dir
+    Inheritor.read_pom_of_id g a |>
+    merge_tree
   in
   let folder (acc : Inheritor.t) (i : Inheritor.t) =
     let deps = Ga_map.merge acc.deps i.deps in
@@ -51,7 +51,7 @@ let dep_with_prop_from (i : Inheritor.t) k v : string =
   dep_from i.dep_mgmt k v |>
   apply_props i
 
-let resolve m2dir pom_fname : id * bom * modules =
-  let i = Inheritor.read_pom m2dir pom_fname |> merge_tree m2dir in
+let resolve pom_fname : id * bom * modules =
+  let i = Inheritor.read_pom pom_fname |> merge_tree in
   let deps = Ga_map.mapi (dep_with_prop_from i) i.deps in
   (i.id, deps, i.modules)

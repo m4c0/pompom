@@ -12,8 +12,8 @@
   > </project>
   > EOF
 
-  $ ./pomdump.exe -j Test.java -m repo
-  Fatal error: exception Sys_error("repo/iam/parent/1/parent-1.pom: No such file or directory")
+  $ ./pomdump.exe -j Test.java
+  Fatal error: exception Sys_error("./.m2/repository/iam/parent/1/parent-1.pom: No such file or directory")
   [2]
 
   $ ./xml.exe iam parent 1 <<EOF
@@ -24,13 +24,13 @@
   >   </parent>
   > EOF
 
-  $ ./pomdump.exe -j Test.java -m repo
-  Fatal error: exception Sys_error("repo/iam/grampa/2/grampa-2.pom: No such file or directory")
+  $ ./pomdump.exe -j Test.java
+  Fatal error: exception Sys_error("./.m2/repository/iam/grampa/2/grampa-2.pom: No such file or directory")
   [2]
 
   $ ./xml.exe iam grampa 2
 
-  $ ./pomdump.exe -j Test.java -m repo
+  $ ./pomdump.exe -j Test.java
   id: hello:world-1.0
   deps:
   modules:

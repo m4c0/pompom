@@ -19,7 +19,7 @@
   > </project>
   > EOF
 
-  $ ./pomdump.exe -j Test.java -m repo
+  $ ./pomdump.exe -j Test.java
   id: using:props-1.0
   deps:
     dep:one-2.2

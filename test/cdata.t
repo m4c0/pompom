@@ -16,7 +16,7 @@
   >   </dependencies>
   > </project>
   > EOF
-  $ ./pomdump.exe -j Test.java -m repo
+  $ ./pomdump.exe -j Test.java
   id: cdata:everywhere-0
   deps:
     cdata:dep-version

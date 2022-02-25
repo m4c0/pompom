@@ -19,7 +19,8 @@ let rec passthru oc =
 
 let () = 
   let (grp, art, ver) = triplet in
-  let fld = [grp; art; ver] |> List.fold_left Filename.concat "repo" in
+  let home = Sys.getenv "HOME" in
+  let fld = [".m2"; "repository"; grp; art; ver] |> List.fold_left Filename.concat home in
   let pom_name = Printf.sprintf "%s-%s.pom" art ver in
   let pom = Filename.concat fld pom_name in
   mkdirs fld;

@@ -8,7 +8,7 @@
   > </project>
   > EOF
 
-  $ ./pomdump.exe -j Test.java -m repo
+  $ ./pomdump.exe -j Test.java
   id: got:deps-0
   deps:
   modules:
@@ -34,7 +34,7 @@
   > </project>
   > EOF
 
-  $ ./pomdump.exe -j Test.java -m repo
+  $ ./pomdump.exe -j Test.java
   id: got:deps-0
   deps:
     dep:one-99

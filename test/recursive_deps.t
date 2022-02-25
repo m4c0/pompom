@@ -35,7 +35,7 @@
   > </project>
   > EOF
 
-  $ ./pomdump.exe -j Test.java -m repo
+  $ ./pomdump.exe -j Test.java
   id: iam:world-1
   deps:
     dep:one-9
