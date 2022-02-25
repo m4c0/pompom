@@ -25,6 +25,9 @@ let from_java fname =
   in
   pom_of fname |> from_pom
 
+let asset_fname (ext : string) ((g, a, v) : id) : string =
+  Repo.asset_fname ext g a v
+
 let transitive_resolve_deps (tt : t) : id Seq.t =
   let fn (g, a, v) = (g, a, v) in
   deps_seq tt |> Seq.map fn
