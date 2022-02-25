@@ -27,4 +27,4 @@ let () =
     print_indent indent "modules:";
     Pompom.modules_seq p |> Seq.iter (print_indent ni)
   in
-  Pompom.from_java !java |> printobj ""
+  Pompom.from_java Compile !java |> printobj ""

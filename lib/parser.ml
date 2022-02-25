@@ -7,6 +7,7 @@ type dep = {
   group: string;
   artifact: string;
   version: string option;
+  scope: string option;
 }
 type dm = {
   group: string;
@@ -55,7 +56,8 @@ let dep_of : Xmelly.t -> dep = function
       let group = find "groupId" in
       let artifact = find "artifactId" in
       let version = find_text "version" l in
-      { group; artifact; version }
+      let scope = find_text "scope" l in
+      { group; artifact; version; scope }
   | _ -> failwith "found weird stuff inside dependencies"
 
 let dep_mgmt_of : Xmelly.t -> dm = function
@@ -93,7 +95,9 @@ let project_of (l : Xmelly.t list) : t =
   let artifact = find_text "artifactId" l |> get_or_fail "artifactId not set" in
   let version = find_text "version" l in
   let id : id = { group; artifact; version } in
-  let deps = find_element "dependencies" l |> Option.value ~default:[] |> List.map dep_of in
+  let deps =
+    find_element "dependencies" l |> Option.value ~default:[] |>
+    List.map dep_of in
   let dep_mgmt =
     find_element "dependencyManagement" l |> Option.value ~default:[] |>
     find_element "dependencies" |> Option.value ~default:[] |>

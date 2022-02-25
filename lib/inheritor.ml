@@ -53,7 +53,7 @@ let props_of (parent : t option) (props : prop_map) =
 
 let pom_of = Repo.asset_fname "pom"
 
-let read_pom ref_fname =
+let read_pom (scopes : string list) (ref_fname : string) : t =
   let rec parse_parent_pom (cfn : string) (pid : Parser.parent) : t =
     let pfld = Filename.dirname cfn |> Filename.dirname in
     let pfn = Filename.concat pfld "pom.xml" in
@@ -81,8 +81,21 @@ let read_pom ref_fname =
       bom_of parent
     in
 
-    let dp_fn ({ group; artifact; version } : Parser.dep) = ((group, artifact), version) in
-    let deps = Ga_map.from_list dp_fn parsed.deps |> dep_of parent in
+    let has_scope ({ scope; _ } : Parser.dep) = 
+      Option.value ~default:"compile" scope
+      |> String.equal
+      |> (Fun.flip List.find_opt) scopes
+      |> Option.is_some
+    in
+
+    let dp_fn ({ group; artifact; version; _ } : Parser.dep) = ((group, artifact), version) in
+    let deps = 
+      List.to_seq parsed.deps
+      |> Seq.filter has_scope
+      |> Seq.map dp_fn
+      |> Ga_map.of_seq
+      |> dep_of parent
+    in
 
     let props = List.to_seq parsed.props |> PropMap.of_seq |> props_of parent in
 
@@ -92,5 +105,5 @@ let read_pom ref_fname =
   in
   Parser.parse_file ref_fname |> stitch_pom ref_fname
 
-let read_pom_of_id grp art ver = pom_of grp art ver |> read_pom
+let read_pom_of_id scopes grp art ver = pom_of grp art ver |> read_pom scopes
 

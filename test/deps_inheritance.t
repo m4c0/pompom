@@ -6,6 +6,11 @@
   >       <artifactId>three</artifactId>
   >       <version>97</version>
   >     </dependency>
+  >     <dependency>
+  >       <groupId>dep</groupId>
+  >       <artifactId>non-existent</artifactId>
+  >       <scope>provided</scope>
+  >     </dependency>
   >   </dependencies>
   > EOF
 
