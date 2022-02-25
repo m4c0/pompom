@@ -12,12 +12,28 @@ let deps_seq (tt : t) : id Seq.t =
 let modules_seq (tt : t) : string Seq.t =
   List.to_seq tt.modules
 
-let from_pom fname =
-  let (id, deps, modules) = Deps.resolve fname in
-  { id; deps; modules }
-
 let asset_fname (ext : string) ((g, a, v) : id) : string =
   Repo.asset_fname ext g a v
+
+let rec from_pom fname : t =
+  let (id, dmap, modules) = Deps.resolve fname in
+  let rec rd (dd : id Seq.t) : id Seq.t =
+    dd
+    |> Seq.map (asset_fname "pom")
+    |> Seq.map from_pom
+    |> Seq.map deps_seq
+    |> Seq.map rd
+    |> Seq.concat
+    |> Seq.append dd
+  in
+  let deps = 
+    Ga_map.to_seq dmap
+    |> Seq.map (fun ((g, a), v) -> (g, a, v))
+    |> rd
+    |> Seq.map (fun (g, a, v) -> ((g, a), v))
+    |> Ga_map.of_seq
+  in
+  { id; deps; modules }
 
 let from_java fname =
   let rec pom_of fname = 
@@ -26,18 +42,4 @@ let from_java fname =
     then pom
     else fname |> Filename.dirname |> pom_of
   in
-  let res = pom_of fname |> from_pom in
-  let rec rd (tt : t) : id Seq.t =
-    deps_seq tt
-    |> Seq.map (asset_fname "pom")
-    |> Seq.map from_pom
-    |> Seq.map rd
-    |> Seq.concat
-    |> Seq.append (deps_seq tt)
-  in
-  let deps = 
-    rd res
-    |> Seq.map (fun (g, a, v) -> ((g, a), v))
-    |> Ga_map.of_seq
-  in
-  { res with deps }
+  pom_of fname |> from_pom
