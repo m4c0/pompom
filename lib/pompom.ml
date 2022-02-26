@@ -24,20 +24,29 @@ let rec from_pom (scope : scope) (fname : string) : t =
     | Test -> ["compile";"test";"provided"]
   in
   let (id, dmap, modules) = Deps.resolve scope_list fname in
-  let rec rd (dd : id Seq.t) : id Seq.t =
-    dd
-    |> Seq.map (asset_fname "pom")
-    |> Seq.map (from_pom Compile)
-    |> Seq.map deps_seq
-    |> Seq.map rd
+  let flat_id ((g, a), v) = (g, a, v) in
+  let recurse (ga, v) = 
+    match Ga_map.find_opt ga dmap with
+    | Some vv -> Seq.return (ga, vv)
+    | None -> 
+        let (g, a) = ga in
+        let ({ deps; _ } : t) = asset_fname "pom" (g, a, v) |> from_pom Compile in
+        Ga_map.to_seq deps |> Seq.cons (ga, v)
+  in
+  let pom_deps id =
+    flat_id id
+    |> asset_fname "pom"
+    |> Deps.resolve ["compile"]
+    |> (fun (_, d, _) -> d)
+    |> Ga_map.to_seq
+    |> Seq.map recurse
     |> Seq.concat
-    |> Seq.append dd
+    |> Seq.cons id
   in
   let deps = 
     Ga_map.to_seq dmap
-    |> Seq.map (fun ((g, a), v) -> (g, a, v))
-    |> rd
-    |> Seq.map (fun (g, a, v) -> ((g, a), v))
+    |> Seq.map pom_deps
+    |> Seq.concat
     |> Ga_map.of_seq
   in
   { id; deps; modules }

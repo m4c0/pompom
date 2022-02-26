@@ -21,6 +21,7 @@ let from_list fn l =
 let merge am bm =
   GAMap.merge Map_utils.parent_merger am bm
 
+let add_seq = GAMap.add_seq
 let filter_map = GAMap.filter_map
 let find_opt = GAMap.find_opt
 let iter = GAMap.iter
