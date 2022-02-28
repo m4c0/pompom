@@ -2,13 +2,22 @@ module PropMap = Map.Make(String)
 type prop_map = string PropMap.t
 
 type id = string * string * string
-type dep = string option
-type dm = string
+type excl = Parser.excl
+type dep = {
+  version: string option;
+  exclusions: excl list;
+}
+type dep_map = dep Ga_map.t
+type dm = {
+  version: string;
+  exclusions: excl list;
+}
+type dm_map = dm Ga_map.t
 type t = {
   id: id;
-  deps: dep Ga_map.t;
-  dep_mgmt: string Ga_map.t;
-  boms: string Ga_map.t;
+  deps: dep_map;
+  dep_mgmt: dm_map;
+  boms: string Ga_map.t; (* TODO: does this support "exclusions"? *)
   props: prop_map; 
   modules: string list;
 }
@@ -41,7 +50,7 @@ let dep_mgmt_of (parent : t option) (dm : dm Ga_map.t) =
   | Some p -> Ga_map.merge p.dep_mgmt dm
   | None -> dm
 
-let bom_of (parent : t option) (boms : dm Ga_map.t) =
+let bom_of (parent : t option) (boms : string Ga_map.t) =
   match parent with
   | Some p -> Ga_map.merge p.boms boms
   | None -> boms
@@ -69,15 +78,18 @@ let read_pom (scopes : string list) (ref_fname : string) : t =
     let id : id = id_of parent parsed.id in
 
     let is_bom ({ scope; tp; _ } : Parser.dm) = scope = Some("import") && tp = Some("pom") in
-    let dm_fn ({ group; artifact; version; _ } : Parser.dm) = ((group, artifact), version) in
+    let dm_fn ({ group; artifact; version; exclusions; _ } : Parser.dm) =
+      ((group, artifact), { version; exclusions })
+    in
     let dep_mgmt = 
       List.filter (Fun.negate is_bom) parsed.dep_mgmt |>
       Ga_map.from_list dm_fn |>
       dep_mgmt_of parent
     in
+    let bom_fn ({ group; artifact; version; _ } : Parser.dm) = ((group, artifact),  version) in
     let boms = 
       List.filter is_bom parsed.dep_mgmt |>
-      Ga_map.from_list dm_fn |>
+      Ga_map.from_list bom_fn |>
       bom_of parent
     in
 
@@ -88,7 +100,12 @@ let read_pom (scopes : string list) (ref_fname : string) : t =
       |> Option.is_some
     in
 
-    let dp_fn ({ group; artifact; version; _ } : Parser.dep) = ((group, artifact), version) in
+    let dp_fn (d : Parser.dep) = 
+      let version = d.version in
+      let exclusions = d.exclusions in
+      let dep : dep = { version; exclusions } in
+      ((d.group, d.artifact), dep)
+    in
     let deps = 
       List.to_seq parsed.deps
       |> Seq.filter has_scope

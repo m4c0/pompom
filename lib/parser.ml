@@ -3,11 +3,16 @@ type id = {
   artifact: string;
   version: string option;
 }
+type excl = {
+  group: string;
+  artifact: string;
+}
 type dep = {
   group: string;
   artifact: string;
   version: string option;
   scope: string option;
+  exclusions: excl list;
 }
 type dm = {
   group: string;
@@ -15,6 +20,7 @@ type dm = {
   version: string;
   scope: string option;
   tp: string option;
+  exclusions: excl list;
 }
 type parent = {
   group: string;
@@ -32,12 +38,19 @@ type t = {
   modules: string list;
 }
 
-let find_element (t : string) (l : Xmelly.t list) : Xmelly.t list option =
+let findopt_element (t : string) (l : Xmelly.t list) : Xmelly.t list option =
   let fn : Xmelly.t -> Xmelly.t list option  = function
     | Element(x, _, xs) when x = t -> Some xs
     | _ -> None
   in
   List.find_map fn l
+
+let find_element (t : string) (l : Xmelly.t list) : Xmelly.t list =
+  findopt_element t l
+  |> Option.value ~default:[]
+
+let findmap_all_elements (fn : Xmelly.t -> 'a) (t : string) (l : Xmelly.t list) : 'a list =
+  find_element t l |> List.map fn 
 
 let find_text (t : string) (l : Xmelly.t list) : string option =
   let fn : Xmelly.t -> string option  = function
@@ -50,6 +63,14 @@ let get_or_fail msg = function
   | Some x -> x
   | None -> failwith msg
 
+let excl_of : Xmelly.t -> excl = function
+  | Element("exclusion", _, l) -> 
+      let find f = find_text f l |> get_or_fail (f ^ " is not set in exclusion") in
+      let group = find "groupId" in
+      let artifact = find "artifactId" in
+      { group; artifact }
+  | _ -> failwith "found weird stuff inside exclusions"
+
 let dep_of : Xmelly.t -> dep = function
   | Element("dependency", _, l) -> 
       let find f = find_text f l |> get_or_fail (f ^ " is not set in dependency") in
@@ -57,7 +78,8 @@ let dep_of : Xmelly.t -> dep = function
       let artifact = find "artifactId" in
       let version = find_text "version" l in
       let scope = find_text "scope" l in
-      { group; artifact; version; scope }
+      let exclusions = findmap_all_elements excl_of "exclusions" l in
+      { group; artifact; version; scope; exclusions }
   | _ -> failwith "found weird stuff inside dependencies"
 
 let dep_mgmt_of : Xmelly.t -> dm = function
@@ -68,7 +90,8 @@ let dep_mgmt_of : Xmelly.t -> dm = function
       let version = find "version" in
       let scope = find_text "scope" l in
       let tp = find_text "type" l in
-      { group; artifact; version; scope; tp  }
+      let exclusions = findmap_all_elements excl_of "exclusions" l in
+      { group; artifact; version; scope; tp; exclusions  }
   | _ -> failwith "found weird stuff inside dependencies of dependency management"
 
 let prop_of : Xmelly.t -> prop = function
@@ -90,24 +113,18 @@ let parent_of (l : Xmelly.t list) : parent =
   { group; artifact; version }
 
 let project_of (l : Xmelly.t list) : t =
-  let parent = find_element "parent" l |> Option.map parent_of in
+  let parent = findopt_element "parent" l |> Option.map parent_of in
   let group = find_text "groupId" l in
   let artifact = find_text "artifactId" l |> get_or_fail "artifactId not set" in
   let version = find_text "version" l in
   let id : id = { group; artifact; version } in
-  let deps =
-    find_element "dependencies" l |> Option.value ~default:[] |>
-    List.map dep_of in
+  let deps = findmap_all_elements dep_of "dependencies" l in
   let dep_mgmt =
-    find_element "dependencyManagement" l |> Option.value ~default:[] |>
-    find_element "dependencies" |> Option.value ~default:[] |>
-    List.map dep_mgmt_of in
-  let props = 
-    find_element "properties" l |> Option.value ~default:[] |>
-    List.map prop_of in
-  let modules = 
-    find_element "modules" l |> Option.value ~default:[] |>
-    List.map module_of in
+    find_element "dependencyManagement" l |>
+    findmap_all_elements dep_mgmt_of "dependencies"
+  in
+  let props = findmap_all_elements prop_of "properties" l in
+  let modules = findmap_all_elements module_of "modules" l in
   { parent; id; deps; dep_mgmt; props; modules }
 
 let from_smelly (xml : Xmelly.t) =

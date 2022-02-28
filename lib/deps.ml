@@ -40,11 +40,12 @@ let rec merge_tree (sc : string list) (i : Inheritor.t) =
   Seq.map read_merge |>
   Seq.fold_left folder i
 
-let dep_from (dm : bom) (g, a) = function
+let dep_from (dm : Inheritor.dm_map) (g, a) ({ version; _ } : Inheritor.dep) =
+  match version with
   | Some x -> x
   | None -> 
       match Ga_map.find_opt (g, a) dm with
-      | Some x -> x
+      | Some { version; _ } -> version
       | None -> "could not find version for " ^ g ^ ":" ^ a |> failwith
 
 let dep_with_prop_from (i : Inheritor.t) k v : string =
