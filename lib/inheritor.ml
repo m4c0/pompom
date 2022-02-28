@@ -1,7 +1,6 @@
 module PropMap = Map.Make(String)
 type prop_map = string PropMap.t
 
-type id = string * string * string
 type excl = Parser.excl
 type dep = {
   version: string option;
@@ -14,7 +13,7 @@ type dm = {
 }
 type dm_map = dm Ga_map.t
 type t = {
-  id: id;
+  id: Pom.id;
   deps: dep_map;
   dep_mgmt: dm_map;
   boms: string Ga_map.t; (* TODO: does this support "exclusions"? *)
@@ -22,23 +21,18 @@ type t = {
   modules: string list;
 }
 
-let id_of (parent : t option) (pid : Parser.id) =
-  match parent with
-  | Some p ->
-      let (g, _, v) = p.id in
-      let group = Option.value ~default:g pid.group in
-      let artifact = pid.artifact in
-      let version = Option.value ~default:v pid.version in
-      (group, artifact, version)
-  | None ->
-      let get_or_fail fld = function
-        | Some x -> x
+let id_of (parent : t option) (pid : Parser.id) : Pom.id =
+  let value fld fn = function
+    | Some v -> v
+    | None ->
+        match parent with
+        | Some p -> fn p.id
         | None -> "missing " ^ fld |> failwith
-      in
-      let group = get_or_fail "groupId" pid.group in
-      let artifact = pid.artifact in
-      let version = get_or_fail "version" pid.version in
-      (group, artifact, version)
+  in
+  let group = value "groupId" (fun p -> p.ga.group) pid.group in
+  let artifact = pid.artifact in
+  let version = value "version" (fun p -> p.version) pid.version in
+  { ga = { group; artifact }; version }
 
 let dep_of (parent : t option) (deps : dep Ga_map.t) =
   match parent with
@@ -75,7 +69,7 @@ let read_pom (sc : Scopes.t) (ref_fname : string) : t =
   and stitch_pom (fname : string) (parsed : Parser.t) : t =
     let parent = Option.map (parse_parent_pom fname) parsed.parent in
 
-    let id : id = id_of parent parsed.id in
+    let id : Pom.id = id_of parent parsed.id in
 
     let is_bom ({ scope; tp; _ } : Parser.dm) = scope = Some("import") && tp = Some("pom") in
     let dm_fn ({ group; artifact; version; exclusions; _ } : Parser.dm) =

@@ -44,4 +44,4 @@ let dep_with_prop_from (i : Inheritor.t) k v : string =
 let resolve (scope : Scopes.t) pom_fname : id * bom * modules =
   let i = Inheritor.read_pom scope pom_fname |> merge_tree scope in
   let deps = Ga_map.mapi (dep_with_prop_from i) i.deps in
-  (i.id, deps, i.modules)
+  ((i.id.ga.group, i.id.ga.artifact, i.id.version), deps, i.modules)
