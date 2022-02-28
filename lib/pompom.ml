@@ -4,7 +4,7 @@ type t = {
   deps : string Ga_map.t;
   modules : string list;
 }
-type scope = Compile | Test | Runtime
+type scope = Scopes.t
 
 let deps_seq (tt : t) : id Seq.t =
   Ga_map.to_seq tt.deps
@@ -17,14 +17,7 @@ let asset_fname (ext : string) ((g, a, v) : id) : string =
   Repo.asset_fname ext g a v
 
 let rec from_pom (scope : scope) (fname : string) : t =
-  let scope_list =
-    match scope with
-    | Compile -> ["compile"]
-    | Runtime -> ["compile";"provided"]
-    | Test -> ["compile";"test";"provided"]
-  in
-  let (id, dmap, modules) = Deps.resolve scope_list fname in
-  let flat_id ((g, a), v) = (g, a, v) in
+  let (id, dmap, modules) = Deps.resolve scope fname in
   let recurse (ga, v) = 
     match Ga_map.find_opt ga dmap with
     | Some vv -> Seq.return (ga, vv)
@@ -33,10 +26,11 @@ let rec from_pom (scope : scope) (fname : string) : t =
         let ({ deps; _ } : t) = asset_fname "pom" (g, a, v) |> from_pom Compile in
         Ga_map.to_seq deps |> Seq.cons (ga, v)
   in
+  let flat_id ((g, a), v) = (g, a, v) in
   let pom_deps id =
     flat_id id
     |> asset_fname "pom"
-    |> Deps.resolve ["compile"]
+    |> Deps.resolve (Scopes.transitive_of scope)
     |> (fun (_, d, _) -> d)
     |> Ga_map.to_seq
     |> Seq.map recurse

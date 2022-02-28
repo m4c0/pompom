@@ -62,7 +62,7 @@ let props_of (parent : t option) (props : prop_map) =
 
 let pom_of = Repo.asset_fname "pom"
 
-let read_pom (scopes : string list) (ref_fname : string) : t =
+let read_pom (sc : Scopes.t) (ref_fname : string) : t =
   let rec parse_parent_pom (cfn : string) (pid : Parser.parent) : t =
     let pfld = Filename.dirname cfn |> Filename.dirname in
     let pfn = Filename.concat pfld "pom.xml" in
@@ -93,12 +93,7 @@ let read_pom (scopes : string list) (ref_fname : string) : t =
       bom_of parent
     in
 
-    let has_scope ({ scope; _ } : Parser.dep) = 
-      Option.value ~default:"compile" scope
-      |> String.equal
-      |> (Fun.flip List.find_opt) scopes
-      |> Option.is_some
-    in
+    let has_scope ({ scope; _ } : Parser.dep) = Scopes.matches sc scope in
 
     let dp_fn (d : Parser.dep) = 
       let version = d.version in
@@ -122,5 +117,5 @@ let read_pom (scopes : string list) (ref_fname : string) : t =
   in
   Parser.parse_file ref_fname |> stitch_pom ref_fname
 
-let read_pom_of_id scopes grp art ver = pom_of grp art ver |> read_pom scopes
+let read_pom_of_id scope grp art ver = pom_of grp art ver |> read_pom scope
 
