@@ -13,17 +13,6 @@ let rec apply_props (i : Inheritor.t) (s : string) : string =
   let res = Str.global_substitute prop_regex fn s in
   if res = s then res else apply_props i res
 
-let merge_deps (dm : bom) (deps : string option Ga_map.t) : bom =
-  let fn (g, a) (v : string option) =
-    match v with
-    | Some x -> x
-    | None ->
-        match Ga_map.find_opt (g, a) dm with
-        | Some x -> x
-        | None -> Printf.sprintf "missing version for %s:%s" g a |> failwith
-  in
-  Ga_map.mapi fn deps
-
 let rec merge_tree (sc : string list) (i : Inheritor.t) =
   let read_merge ((g, a), v) =
     apply_props i v |>
