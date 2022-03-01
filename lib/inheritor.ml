@@ -1,15 +1,14 @@
 module PropMap = Map.Make(String)
 type prop_map = string PropMap.t
 
-type excl = Parser.excl
 type dep = {
   version: string option;
-  exclusions: excl list;
+  exclusions: Pom.ga list;
 }
 type dep_map = dep Ga_map.t
 type dm = {
   version: string;
-  exclusions: excl list;
+  exclusions: Pom.ga list;
 }
 type dm_map = dm Ga_map.t
 type t = {
@@ -34,20 +33,19 @@ let id_of (parent : t option) (pid : Parser.id) : Pom.id =
   let version = value "version" (fun p -> p.version) pid.version in
   { ga = { group; artifact }; version }
 
-let dep_of (parent : t option) (deps : dep Ga_map.t) =
+let merge_parent_map (parent : t option) mapfn map =
   match parent with
-  | Some p -> Ga_map.merge p.deps deps
-  | None -> deps
+  | Some p -> Ga_map.merge (mapfn p) map
+  | None -> map
+
+let dep_of (parent : t option) (deps : dep Ga_map.t) =
+  merge_parent_map parent (fun p -> p.deps) deps
 
 let dep_mgmt_of (parent : t option) (dm : dm Ga_map.t) =
-  match parent with
-  | Some p -> Ga_map.merge p.dep_mgmt dm
-  | None -> dm
+  merge_parent_map parent (fun p -> p.dep_mgmt) dm
 
 let bom_of (parent : t option) (boms : string Ga_map.t) =
-  match parent with
-  | Some p -> Ga_map.merge p.boms boms
-  | None -> boms
+  merge_parent_map parent (fun p -> p.boms) boms
 
 let props_of (parent : t option) (props : prop_map) =
   match parent with
@@ -58,22 +56,18 @@ let pom_of = Repo.asset_fname "pom"
 
 let read_pom (sc : Scopes.t) (ref_fname : string) : t =
   let rec parse_parent_pom (cfn : string) (pid : Parser.parent) : t =
-    let pfld = Filename.dirname cfn |> Filename.dirname in
-    let pfn = Filename.concat pfld "pom.xml" in
-    if pfn <> cfn && Sys.file_exists pfn
-    then Parser.parse_file pfn |> stitch_pom pfn
-    else
-      let { group; artifact; version } : Parser.parent = pid in
-      let repofn = pom_of group artifact version in
-      Parser.parse_file repofn |> stitch_pom repofn
+    let { group; artifact; version } : Parser.parent = pid in
+    let repofn = Repo.parent_of_pom cfn group artifact version in
+    Parser.parse_file repofn |> stitch_pom repofn
   and stitch_pom (fname : string) (parsed : Parser.t) : t =
     let parent = Option.map (parse_parent_pom fname) parsed.parent in
 
     let id : Pom.id = id_of parent parsed.id in
+    let excl ({ group; artifact } : Parser.excl) : Pom.ga = { group; artifact } in
 
     let is_bom ({ scope; tp; _ } : Parser.dm) = scope = Some("import") && tp = Some("pom") in
     let dm_fn ({ group; artifact; version; exclusions; _ } : Parser.dm) =
-      ((group, artifact), { version; exclusions })
+      ((group, artifact), { version; exclusions = List.map excl exclusions })
     in
     let dep_mgmt = 
       List.filter (Fun.negate is_bom) parsed.dep_mgmt |>
@@ -91,7 +85,7 @@ let read_pom (sc : Scopes.t) (ref_fname : string) : t =
 
     let dp_fn (d : Parser.dep) = 
       let version = d.version in
-      let exclusions = d.exclusions in
+      let exclusions = List.map excl d.exclusions in
       let dep : dep = { version; exclusions } in
       ((d.group, d.artifact), dep)
     in
