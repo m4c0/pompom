@@ -7,6 +7,8 @@ type dep = {
 }
 type dep_map = dep Ga_map.t
 type dm = {
+  scope: string option;
+  tp: string option;
   version: string;
   exclusions: Pom.ga list;
 }
@@ -15,7 +17,6 @@ type t = {
   id: Pom.id;
   deps: dep_map;
   dep_mgmt: dm_map;
-  boms: string Ga_map.t; (* TODO: does this support "exclusions"? *)
   props: prop_map; 
   modules: string list;
 }
@@ -44,15 +45,10 @@ let dep_of (parent : t option) (deps : dep Ga_map.t) =
 let dep_mgmt_of (parent : t option) (dm : dm Ga_map.t) =
   merge_parent_map parent (fun p -> p.dep_mgmt) dm
 
-let bom_of (parent : t option) (boms : string Ga_map.t) =
-  merge_parent_map parent (fun p -> p.boms) boms
-
 let props_of (parent : t option) (props : prop_map) =
   match parent with
   | Some p -> PropMap.merge Map_utils.parent_merger p.props props
   | None -> props
-
-let pom_of = Repo.asset_fname "pom"
 
 let read_pom (sc : Scopes.t) (ref_fname : string) : t =
   let rec parse_parent_pom (cfn : string) (pid : Parser.parent) : t =
@@ -65,20 +61,12 @@ let read_pom (sc : Scopes.t) (ref_fname : string) : t =
     let id : Pom.id = id_of parent parsed.id in
     let excl ({ group; artifact } : Parser.excl) : Pom.ga = { group; artifact } in
 
-    let is_bom ({ scope; tp; _ } : Parser.dm) = scope = Some("import") && tp = Some("pom") in
-    let dm_fn ({ group; artifact; version; exclusions; _ } : Parser.dm) =
-      ((group, artifact), { version; exclusions = List.map excl exclusions })
+    let dm_fn ({ group; artifact; version; exclusions; scope; tp } : Parser.dm) : (string * string) * dm =
+      ((group, artifact), { version; scope; tp; exclusions = List.map excl exclusions })
     in
     let dep_mgmt = 
-      List.filter (Fun.negate is_bom) parsed.dep_mgmt |>
-      Ga_map.from_list dm_fn |>
+      Ga_map.from_list dm_fn parsed.dep_mgmt |>
       dep_mgmt_of parent
-    in
-    let bom_fn ({ group; artifact; version; _ } : Parser.dm) = ((group, artifact),  version) in
-    let boms = 
-      List.filter is_bom parsed.dep_mgmt |>
-      Ga_map.from_list bom_fn |>
-      bom_of parent
     in
 
     let has_scope ({ scope; _ } : Parser.dep) = Scopes.matches sc scope in
@@ -101,9 +89,7 @@ let read_pom (sc : Scopes.t) (ref_fname : string) : t =
 
     let modules = parsed.modules in
 
-    { id; deps; dep_mgmt; boms; props; modules }
+    { id; deps; dep_mgmt; props; modules }
   in
   Parser.parse_file ref_fname |> stitch_pom ref_fname
-
-let read_pom_of_id scope grp art ver = pom_of grp art ver |> read_pom scope
 
