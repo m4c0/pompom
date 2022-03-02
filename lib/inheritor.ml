@@ -1,28 +1,13 @@
 module PropMap = Map.Make (String)
 
+type dep = Parser.dep_data
 type prop_map = string PropMap.t
-
-type dep = {
-  scope : string option;
-  version : string option;
-  exclusions : Pom.ga list;
-}
-
 type dep_map = dep Ga_map.t
-
-type dm = {
-  scope : string option;
-  tp : string option;
-  version : string;
-  exclusions : Pom.ga list;
-}
-
-type dm_map = dm Ga_map.t
 
 type t = {
   id : Pom.id;
   deps : dep_map;
-  dep_mgmt : dm_map;
+  dep_mgmt : dep_map;
   props : prop_map;
   modules : string list;
 }
@@ -63,22 +48,15 @@ let read_pom (ref_fname : string) : t =
 
     let id : Pom.id = id_of parent parsed.id in
 
-    let dm_fn
-        ({ ga = { group; artifact }; version; data = { exclusions; scope; tp } } :
-          Parser.dm) : (string * string) * dm =
-      ((group, artifact), { version; scope; tp; exclusions })
+    let dm_fn ({ ga = { group; artifact }; data } : Parser.dep) =
+      ((group, artifact), data)
     in
     let dep_mgmt =
       Ga_map.from_list dm_fn parsed.dep_mgmt
       |> merge_parent_map parent (fun p -> p.dep_mgmt)
     in
 
-    let dp_fn (d : Parser.dep) =
-      let scope = d.data.scope in
-      let version = d.version in
-      let exclusions = d.data.exclusions in
-      ((d.ga.group, d.ga.artifact), { scope; version; exclusions })
-    in
+    let dp_fn (d : Parser.dep) = ((d.ga.group, d.ga.artifact), d.data) in
     let deps =
       Ga_map.from_list dp_fn parsed.deps
       |> merge_parent_map parent (fun p -> p.deps)

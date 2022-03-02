@@ -15,8 +15,13 @@ let rec apply_props (i : Inheritor.t) (s : string) : string =
   if res = s then res else apply_props i res
 
 let rec merge_dm (i : Inheritor.t) =
-  let read_merge ((g, a), ({ version; _ } : Inheritor.dm)) =
-    apply_props i version |> Repo.asset_fname "pom" g a |> Inheritor.read_pom
+  let read_merge ((g, a), ({ version; _ } : Inheritor.dep)) =
+    let v =
+      match version with
+      | Some vv -> vv
+      | None -> Printf.sprintf "missing version for %s:%s" g a |> failwith
+    in
+    apply_props i v |> Repo.asset_fname "pom" g a |> Inheritor.read_pom
     |> merge_dm
   in
   let folder (acc : Inheritor.t) (i : Inheritor.t) =
@@ -24,19 +29,19 @@ let rec merge_dm (i : Inheritor.t) =
     let dep_mgmt = Ga_map.merge acc.dep_mgmt i.dep_mgmt in
     { acc with deps; dep_mgmt }
   in
-  let is_bom (_, ({ scope; tp; _ } : Inheritor.dm)) =
+  let is_bom (_, ({ scope; tp; _ } : Inheritor.dep)) =
     scope = Some "import" && tp = Some "pom"
   in
   Ga_map.to_seq i.dep_mgmt |> Seq.filter is_bom |> Seq.map read_merge
   |> Seq.fold_left folder i
 
-let dep_from (dm : Inheritor.dm_map) (g, a) ({ version; _ } : Inheritor.dep) =
+let dep_from (dm : Inheritor.dep_map) (g, a) ({ version; _ } : Inheritor.dep) =
   match version with
   | Some x -> x
   | None -> (
       match Ga_map.find_opt (g, a) dm with
-      | Some { version; _ } -> version
-      | None -> "could not find version for " ^ g ^ ":" ^ a |> failwith)
+      | Some { version = Some v; _ } -> v
+      | _ -> "could not find version for " ^ g ^ ":" ^ a |> failwith)
 
 let resolve_dep_versions (s : Scopes.t) (i : Inheritor.t) =
   let fn k (v : Inheritor.dep) : string option =

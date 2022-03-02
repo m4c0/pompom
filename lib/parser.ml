@@ -1,14 +1,13 @@
 type id = { group : string option; artifact : string; version : string option }
 
 type dep_data = {
+  version : string option;
   scope : string option;
   tp : string option;
   exclusions : Pom.ga list;
 }
 
-type 'v base_dep = { ga : Pom.ga; version : 'v; data : dep_data }
-type dep = string option base_dep
-type dm = string base_dep
+type dep = { ga : Pom.ga; data : dep_data }
 type parent = { group : string; artifact : string; version : string }
 type prop = string * string
 
@@ -16,7 +15,7 @@ type t = {
   parent : parent option;
   id : id;
   deps : dep list;
-  dep_mgmt : dm list;
+  dep_mgmt : dep list;
   props : prop list;
   modules : string list;
 }
@@ -55,30 +54,18 @@ let excl_of : Xmelly.t -> Pom.ga = function
   | _ -> failwith "found weird stuff inside exclusions"
 
 let data_of (l : Xmelly.t list) : dep_data =
+  let version = find_text "version" l in
   let scope = find_text "scope" l in
   let tp = find_text "type" l in
   let exclusions = findmap_all_elements excl_of "exclusions" l in
-  { scope; exclusions; tp }
+  { version; scope; exclusions; tp }
 
 let dep_of : Xmelly.t -> dep = function
   | Element ("dependency", _, l) ->
       let ga = ga_of "dependency" l in
-      let version = find_text "version" l in
       let data = data_of l in
-      { ga; version; data }
+      { ga; data }
   | _ -> failwith "found weird stuff inside dependencies"
-
-let dep_mgmt_of : Xmelly.t -> dm = function
-  | Element ("dependency", _, l) ->
-      let find f =
-        find_text f l |> get_or_fail (f ^ " is not set in dependency management")
-      in
-      let ga = ga_of "dependency management" l in
-      let version = find "version" in
-      let data = data_of l in
-      { ga; version; data }
-  | _ ->
-      failwith "found weird stuff inside dependencies of dependency management"
 
 let prop_of : Xmelly.t -> prop = function
   | Element (key, _, [ Text v ]) -> (key, v)
@@ -107,7 +94,7 @@ let project_of (l : Xmelly.t list) : t =
   let deps = findmap_all_elements dep_of "dependencies" l in
   let dep_mgmt =
     find_element "dependencyManagement" l
-    |> findmap_all_elements dep_mgmt_of "dependencies"
+    |> findmap_all_elements dep_of "dependencies"
   in
   let props = findmap_all_elements prop_of "properties" l in
   let modules = findmap_all_elements module_of "modules" l in
