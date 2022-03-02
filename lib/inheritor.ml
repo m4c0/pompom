@@ -2,6 +2,7 @@ module PropMap = Map.Make(String)
 type prop_map = string PropMap.t
 
 type dep = {
+  scope: string option;
   version: string option;
   exclusions: Pom.ga list;
 }
@@ -50,7 +51,12 @@ let props_of (parent : t option) (props : prop_map) =
   | Some p -> PropMap.merge Map_utils.parent_merger p.props props
   | None -> props
 
-let read_pom (sc : Scopes.t) (ref_fname : string) : t =
+(**
+   Read and merge the POM hiearchy into a single POM.
+   Given a parseable file, it dives into its <parent> hiearchy to merge its
+   properties into a single structure
+*)
+let read_pom (ref_fname : string) : t =
   let rec parse_parent_pom (cfn : string) (pid : Parser.parent) : t =
     let { group; artifact; version } : Parser.parent = pid in
     let repofn = Repo.parent_of_pom cfn group artifact version in
@@ -69,19 +75,14 @@ let read_pom (sc : Scopes.t) (ref_fname : string) : t =
       dep_mgmt_of parent
     in
 
-    let has_scope ({ scope; _ } : Parser.dep) = Scopes.matches sc scope in
-
     let dp_fn (d : Parser.dep) = 
+      let scope = d.scope in
       let version = d.version in
       let exclusions = List.map excl d.exclusions in
-      let dep : dep = { version; exclusions } in
-      ((d.group, d.artifact), dep)
+      ((d.group, d.artifact), { scope; version; exclusions })
     in
     let deps = 
-      List.to_seq parsed.deps
-      |> Seq.filter has_scope
-      |> Seq.map dp_fn
-      |> Ga_map.of_seq
+      Ga_map.from_list dp_fn parsed.deps
       |> dep_of parent
     in
 
