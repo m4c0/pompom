@@ -1,22 +1,17 @@
 type id = { group : string option; artifact : string; version : string option }
 type excl = { group : string; artifact : string }
 
-type dep = {
+type 'v depy = {
   group : string;
   artifact : string;
-  version : string option;
-  scope : string option;
-  exclusions : excl list;
-}
-
-type dm = {
-  group : string;
-  artifact : string;
-  version : string;
+  version : 'v;
   scope : string option;
   tp : string option;
   exclusions : excl list;
 }
+
+type dep = string option depy 
+type dm = string depy 
 
 type parent = { group : string; artifact : string; version : string }
 type prop = string * string
@@ -72,8 +67,9 @@ let dep_of : Xmelly.t -> dep = function
       let artifact = find "artifactId" in
       let version = find_text "version" l in
       let scope = find_text "scope" l in
+      let tp = find_text "type" l in
       let exclusions = findmap_all_elements excl_of "exclusions" l in
-      { group; artifact; version; scope; exclusions }
+      { group; artifact; version; scope; exclusions; tp }
   | _ -> failwith "found weird stuff inside dependencies"
 
 let dep_mgmt_of : Xmelly.t -> dm = function
