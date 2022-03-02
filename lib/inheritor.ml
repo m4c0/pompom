@@ -3,35 +3,49 @@ module PropMap = Map.Make (String)
 type dep = Parser.dep_data
 type prop_map = string PropMap.t
 type dep_map = dep Ga_map.t
+type id = string * string * string
 
 type t = {
-  id : Pom.id;
+  id : id;
   deps : dep_map;
   dep_mgmt : dep_map;
   props : prop_map;
   modules : string list;
 }
 
-let id_of (parent : t option) (pid : Parser.id) : Pom.id =
-  let value fld fn = function
-    | Some v -> v
+let rec parse_and_merge (pom : string) : Parser.t =
+  let parse_parent (g, a, v) : Parser.t =
+    Repo.parent_of_pom pom g a v |> parse_and_merge
+  in
+  let parsed = Parser.parse_file pom in
+
+  let get_or_inherit fld v fn =
+    match v with
+    | Some value -> Some value
     | None -> (
-        match parent with
-        | Some p -> fn p.id
+        match Option.map fn parsed.parent with
+        | Some p -> Some p
         | None -> "missing " ^ fld |> failwith)
   in
-  let group = value "groupId" (fun p -> p.ga.group) pid.group in
-  let artifact = pid.artifact in
-  let version = value "version" (fun p -> p.version) pid.version in
-  { ga = { group; artifact }; version }
+  let group = get_or_inherit "group" parsed.id.group (fun (g, _, _) -> g) in
+  let version =
+    get_or_inherit "version" parsed.id.version (fun (_, _, v) -> v)
+  in
+  let id = { parsed.id with group; version } in
 
-let merge_parent_map (parent : t option) mapfn map =
-  match parent with Some p -> Ga_map.merge (mapfn p) map | None -> map
+  let parent = Option.map parse_parent parsed.parent in
 
-let props_of (parent : t option) (props : prop_map) =
-  match parent with
-  | Some p -> PropMap.merge Map_utils.parent_merger p.props props
-  | None -> props
+  let inherit_seq pfn =
+    let v = pfn parsed in
+    Option.map pfn parent |> Option.value ~default:Seq.empty |> Seq.append v
+  in
+  let deps = inherit_seq (fun (p : Parser.t) -> p.deps) in
+  let dep_mgmt = inherit_seq (fun (p : Parser.t) -> p.dep_mgmt) in
+  let props = inherit_seq (fun (p : Parser.t) -> p.props) in
+
+  { parsed with id; deps; dep_mgmt; props }
+
+let ga_seq_split ({ ga; data } : Parser.dep) = (ga, data)
 
 (**
    Read and merge the POM hiearchy into a single POM.
@@ -39,32 +53,16 @@ let props_of (parent : t option) (props : prop_map) =
    properties into a single structure
 *)
 let read_pom (ref_fname : string) : t =
-  let rec parse_parent_pom (cfn : string) (pid : Parser.parent) : t =
-    let ({ group; artifact; version } : Parser.parent) = pid in
-    let repofn = Repo.parent_of_pom cfn group artifact version in
-    Parser.parse_file repofn |> stitch_pom repofn
-  and stitch_pom (fname : string) (parsed : Parser.t) : t =
-    let parent = Option.map (parse_parent_pom fname) parsed.parent in
+  let p = parse_and_merge ref_fname in
 
-    let id : Pom.id = id_of parent parsed.id in
+  let group = Option.get p.id.group in
+  let artifact = p.id.artifact in
+  let version = Option.get p.id.version in
 
-    let dp_fn (d : Parser.dep) = ((d.ga.group, d.ga.artifact), d.data) in
+  let id = (group, artifact, version) in
+  let deps = Seq.map ga_seq_split p.deps |> Ga_map.of_seq in
+  let dep_mgmt = Seq.map ga_seq_split p.dep_mgmt |> Ga_map.of_seq in
+  let modules = p.modules |> List.of_seq in
+  let props = PropMap.of_seq p.props in
 
-    let dep_mgmt =
-      Seq.map dp_fn parsed.dep_mgmt
-      |> Ga_map.of_seq
-      |> merge_parent_map parent (fun p -> p.dep_mgmt)
-    in
-
-    let deps =
-      Seq.map dp_fn parsed.deps |> Ga_map.of_seq
-      |> merge_parent_map parent (fun p -> p.deps)
-    in
-
-    let props = PropMap.of_seq parsed.props |> props_of parent in
-
-    let modules = List.of_seq parsed.modules in
-
-    { id; deps; dep_mgmt; props; modules }
-  in
-  Parser.parse_file ref_fname |> stitch_pom ref_fname
+  { id; deps; dep_mgmt; modules; props }

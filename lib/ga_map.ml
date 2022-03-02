@@ -1,8 +1,10 @@
 module GrpArt = struct
-  type t = string * string
+  type t = Pom.ga
 
-  let compare (g0, a0) (g1, a1) =
-    match String.compare g0 g1 with 0 -> String.compare a0 a1 | c -> c
+  let compare (a : t) (b : t) =
+    match String.compare a.group b.group with
+    | 0 -> String.compare a.artifact b.artifact
+    | c -> c
 end
 
 module GAMap = Map.Make (GrpArt)

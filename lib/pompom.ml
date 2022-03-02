@@ -2,8 +2,11 @@ type id = string * string * string
 type t = { id : id; deps : string Ga_map.t; modules : string list }
 type scope = Scopes.t
 
+let id_of (tt : t) : id = tt.id
+
 let deps_seq (tt : t) : id Seq.t =
-  Ga_map.to_seq tt.deps |> Seq.map (fun ((g, a), v) -> (g, a, v))
+  Ga_map.to_seq tt.deps
+  |> Seq.map (fun ((ga : Pom.ga), v) -> (ga.group, ga.artifact, v))
 
 let modules_seq (tt : t) : string Seq.t = List.to_seq tt.modules
 
@@ -16,13 +19,12 @@ let rec from_pom (scope : scope) (fname : string) : t =
     match Ga_map.find_opt ga dmap with
     | Some vv -> Seq.return (ga, vv)
     | None ->
-        let g, a = ga in
         let ({ deps; _ } : t) =
-          asset_fname "pom" (g, a, v) |> from_pom Compile
+          asset_fname "pom" (ga.group, ga.artifact, v) |> from_pom Compile
         in
         Ga_map.to_seq deps |> Seq.cons (ga, v)
   in
-  let flat_id ((g, a), v) = (g, a, v) in
+  let flat_id ((ga : Pom.ga), v) = (ga.group, ga.artifact, v) in
   let pom_deps id =
     flat_id id |> asset_fname "pom"
     |> Deps.resolve (Scopes.transitive_of scope)

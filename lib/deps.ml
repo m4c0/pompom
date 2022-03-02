@@ -15,7 +15,9 @@ let rec apply_props (i : Inheritor.t) (s : string) : string =
   if res = s then res else apply_props i res
 
 let rec merge_dm (i : Inheritor.t) =
-  let read_merge ((g, a), ({ version; _ } : Inheritor.dep)) =
+  let read_merge ((ga : Pom.ga), ({ version; _ } : Inheritor.dep)) =
+    let g = ga.group in
+    let a = ga.artifact in
     let v =
       match version with
       | Some vv -> vv
@@ -35,13 +37,15 @@ let rec merge_dm (i : Inheritor.t) =
   Ga_map.to_seq i.dep_mgmt |> Seq.filter is_bom |> Seq.map read_merge
   |> Seq.fold_left folder i
 
-let dep_from (dm : Inheritor.dep_map) (g, a) ({ version; _ } : Inheritor.dep) =
+let dep_from (dm : Inheritor.dep_map) ga ({ version; _ } : Inheritor.dep) =
   match version with
   | Some x -> x
   | None -> (
-      match Ga_map.find_opt (g, a) dm with
+      match Ga_map.find_opt ga dm with
       | Some { version = Some v; _ } -> v
-      | _ -> "could not find version for " ^ g ^ ":" ^ a |> failwith)
+      | _ ->
+          "could not find version for " ^ ga.group ^ ":" ^ ga.artifact
+          |> failwith)
 
 let resolve_dep_versions (s : Scopes.t) (i : Inheritor.t) =
   let fn k (v : Inheritor.dep) : string option =
@@ -54,4 +58,4 @@ let resolve_dep_versions (s : Scopes.t) (i : Inheritor.t) =
 let resolve (scope : Scopes.t) pom_fname : id * bom * modules =
   let i = Inheritor.read_pom pom_fname |> merge_dm in
   let deps = resolve_dep_versions scope i in
-  ((i.id.ga.group, i.id.ga.artifact, i.id.version), deps, i.modules)
+  (i.id, deps, i.modules)

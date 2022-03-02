@@ -23,7 +23,7 @@ let () =
     let ni = "  " ^ indent in
     print_string indent;
     print_string "id: ";
-    print "" p.id;
+    print "" (Pompom.id_of p);
 
     print_indent indent "deps:";
     Pompom.deps_seq p |> Seq.iter (print ni);

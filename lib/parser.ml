@@ -8,7 +8,7 @@ type dep_data = {
 }
 
 type dep = { ga : Pom.ga; data : dep_data }
-type parent = { group : string; artifact : string; version : string }
+type parent = string * string * string
 type prop = string * string
 
 type t = {
@@ -83,7 +83,7 @@ let parent_of (l : Xmelly.t list) : parent =
   let group = find "groupId" in
   let artifact = find "artifactId" in
   let version = find "version" in
-  { group; artifact; version }
+  (group, artifact, version)
 
 let project_of (l : Xmelly.t list) : t =
   let parent = findopt_element "parent" l |> Option.map parent_of in
