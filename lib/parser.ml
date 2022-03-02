@@ -1,5 +1,4 @@
 type id = { group : string option; artifact : string; version : string option }
-type excl = { group : string; artifact : string }
 
 type 'v depy = {
   group : string;
@@ -7,12 +6,11 @@ type 'v depy = {
   version : 'v;
   scope : string option;
   tp : string option;
-  exclusions : excl list;
+  exclusions : Pom.ga list;
 }
 
-type dep = string option depy 
-type dm = string depy 
-
+type dep = string option depy
+type dm = string depy
 type parent = { group : string; artifact : string; version : string }
 type prop = string * string
 
@@ -48,7 +46,7 @@ let find_text (t : string) (l : Xmelly.t list) : string option =
 
 let get_or_fail msg = function Some x -> x | None -> failwith msg
 
-let excl_of : Xmelly.t -> excl = function
+let excl_of : Xmelly.t -> Pom.ga = function
   | Element ("exclusion", _, l) ->
       let find f =
         find_text f l |> get_or_fail (f ^ " is not set in exclusion")

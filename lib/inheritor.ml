@@ -43,12 +43,6 @@ let id_of (parent : t option) (pid : Parser.id) : Pom.id =
 let merge_parent_map (parent : t option) mapfn map =
   match parent with Some p -> Ga_map.merge (mapfn p) map | None -> map
 
-let dep_of (parent : t option) (deps : dep Ga_map.t) =
-  merge_parent_map parent (fun p -> p.deps) deps
-
-let dep_mgmt_of (parent : t option) (dm : dm Ga_map.t) =
-  merge_parent_map parent (fun p -> p.dep_mgmt) dm
-
 let props_of (parent : t option) (props : prop_map) =
   match parent with
   | Some p -> PropMap.merge Map_utils.parent_merger p.props props
@@ -68,26 +62,26 @@ let read_pom (ref_fname : string) : t =
     let parent = Option.map (parse_parent_pom fname) parsed.parent in
 
     let id : Pom.id = id_of parent parsed.id in
-    let excl ({ group; artifact } : Parser.excl) : Pom.ga =
-      { group; artifact }
-    in
 
     let dm_fn ({ group; artifact; version; exclusions; scope; tp } : Parser.dm)
         : (string * string) * dm =
-      ( (group, artifact),
-        { version; scope; tp; exclusions = List.map excl exclusions } )
+      ((group, artifact), { version; scope; tp; exclusions })
     in
     let dep_mgmt =
-      Ga_map.from_list dm_fn parsed.dep_mgmt |> dep_mgmt_of parent
+      Ga_map.from_list dm_fn parsed.dep_mgmt
+      |> merge_parent_map parent (fun p -> p.dep_mgmt)
     in
 
     let dp_fn (d : Parser.dep) =
       let scope = d.scope in
       let version = d.version in
-      let exclusions = List.map excl d.exclusions in
+      let exclusions = d.exclusions in
       ((d.group, d.artifact), { scope; version; exclusions })
     in
-    let deps = Ga_map.from_list dp_fn parsed.deps |> dep_of parent in
+    let deps =
+      Ga_map.from_list dp_fn parsed.deps
+      |> merge_parent_map parent (fun p -> p.deps)
+    in
 
     let props = List.to_seq parsed.props |> PropMap.of_seq |> props_of parent in
 
