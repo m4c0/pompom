@@ -7,6 +7,10 @@
  (name xml)
  (modules xml))
 
-(env (_ (env-vars (HOME "."))))
+(env
+ (_
+  (env-vars
+   (HOME "."))))
 
-(cram (deps pomdump.exe xml.exe))
+(cram
+ (deps pomdump.exe xml.exe))

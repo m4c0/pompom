@@ -1,79 +1,73 @@
-type id = {
-  group: string option;
-  artifact: string;
-  version: string option;
-}
-type excl = {
-  group: string;
-  artifact: string;
-}
+type id = { group : string option; artifact : string; version : string option }
+type excl = { group : string; artifact : string }
+
 type dep = {
-  group: string;
-  artifact: string;
-  version: string option;
-  scope: string option;
-  exclusions: excl list;
+  group : string;
+  artifact : string;
+  version : string option;
+  scope : string option;
+  exclusions : excl list;
 }
+
 type dm = {
-  group: string;
-  artifact: string;
-  version: string;
-  scope: string option;
-  tp: string option;
-  exclusions: excl list;
+  group : string;
+  artifact : string;
+  version : string;
+  scope : string option;
+  tp : string option;
+  exclusions : excl list;
 }
-type parent = {
-  group: string;
-  artifact: string;
-  version: string;
-}
+
+type parent = { group : string; artifact : string; version : string }
 type prop = string * string
 
 type t = {
-  parent: parent option;
-  id: id;
-  deps: dep list;
-  dep_mgmt: dm list;
-  props: prop list;
-  modules: string list;
+  parent : parent option;
+  id : id;
+  deps : dep list;
+  dep_mgmt : dm list;
+  props : prop list;
+  modules : string list;
 }
 
 let findopt_element (t : string) (l : Xmelly.t list) : Xmelly.t list option =
-  let fn : Xmelly.t -> Xmelly.t list option  = function
-    | Element(x, _, xs) when x = t -> Some xs
+  let fn : Xmelly.t -> Xmelly.t list option = function
+    | Element (x, _, xs) when x = t -> Some xs
     | _ -> None
   in
   List.find_map fn l
 
 let find_element (t : string) (l : Xmelly.t list) : Xmelly.t list =
-  findopt_element t l
-  |> Option.value ~default:[]
+  findopt_element t l |> Option.value ~default:[]
 
-let findmap_all_elements (fn : Xmelly.t -> 'a) (t : string) (l : Xmelly.t list) : 'a list =
-  find_element t l |> List.map fn 
+let findmap_all_elements (fn : Xmelly.t -> 'a) (t : string) (l : Xmelly.t list)
+    : 'a list =
+  find_element t l |> List.map fn
 
 let find_text (t : string) (l : Xmelly.t list) : string option =
-  let fn : Xmelly.t -> string option  = function
-    | Element(x, _, [Text tt]) when x = t -> Some tt
+  let fn : Xmelly.t -> string option = function
+    | Element (x, _, [ Text tt ]) when x = t -> Some tt
     | _ -> None
   in
   List.find_map fn l
 
-let get_or_fail msg = function
-  | Some x -> x
-  | None -> failwith msg
+let get_or_fail msg = function Some x -> x | None -> failwith msg
 
 let excl_of : Xmelly.t -> excl = function
-  | Element("exclusion", _, l) -> 
-      let find f = find_text f l |> get_or_fail (f ^ " is not set in exclusion") in
+  | Element ("exclusion", _, l) ->
+      let find f =
+        find_text f l |> get_or_fail (f ^ " is not set in exclusion")
+      in
       let group = find "groupId" in
       let artifact = find "artifactId" in
       { group; artifact }
   | _ -> failwith "found weird stuff inside exclusions"
 
 let dep_of : Xmelly.t -> dep = function
-  | Element("dependency", _, l) -> 
-      let find f = find_text f l |> get_or_fail (f ^ " is not set in dependency") in
+  | Element ("dependency", _, l) ->
+      let find f =
+        find_text f l |> get_or_fail (f ^ " is not set in dependency")
+      in
       let group = find "groupId" in
       let artifact = find "artifactId" in
       let version = find_text "version" l in
@@ -83,27 +77,30 @@ let dep_of : Xmelly.t -> dep = function
   | _ -> failwith "found weird stuff inside dependencies"
 
 let dep_mgmt_of : Xmelly.t -> dm = function
-  | Element("dependency", _, l) -> 
-      let find f = find_text f l |> get_or_fail (f ^ " is not set in dependency management") in
+  | Element ("dependency", _, l) ->
+      let find f =
+        find_text f l |> get_or_fail (f ^ " is not set in dependency management")
+      in
       let group = find "groupId" in
       let artifact = find "artifactId" in
       let version = find "version" in
       let scope = find_text "scope" l in
       let tp = find_text "type" l in
       let exclusions = findmap_all_elements excl_of "exclusions" l in
-      { group; artifact; version; scope; tp; exclusions  }
-  | _ -> failwith "found weird stuff inside dependencies of dependency management"
+      { group; artifact; version; scope; tp; exclusions }
+  | _ ->
+      failwith "found weird stuff inside dependencies of dependency management"
 
 let prop_of : Xmelly.t -> prop = function
-  | Element(key, _, [Text v]) -> (key, v)
-  | Element(key, _, []) -> (key, "")
-  | Element(x, _, _) -> failwith (x ^ ": invalid property format")
-  | Text(x) -> failwith (x ^ ": loose text found inside properties")
+  | Element (key, _, [ Text v ]) -> (key, v)
+  | Element (key, _, []) -> (key, "")
+  | Element (x, _, _) -> failwith (x ^ ": invalid property format")
+  | Text x -> failwith (x ^ ": loose text found inside properties")
 
 let module_of : Xmelly.t -> string = function
-  | Element("module", _, [Text m]) -> m
-  | Element(x, _, _) -> failwith (x ^ ": invalid module format")
-  | Text(x) -> failwith (x ^ ": loose text found inside modules")
+  | Element ("module", _, [ Text m ]) -> m
+  | Element (x, _, _) -> failwith (x ^ ": invalid module format")
+  | Text x -> failwith (x ^ ": loose text found inside modules")
 
 let parent_of (l : Xmelly.t list) : parent =
   let find f = find_text f l |> get_or_fail (f ^ " is not set in parent") in
@@ -120,8 +117,8 @@ let project_of (l : Xmelly.t list) : t =
   let id : id = { group; artifact; version } in
   let deps = findmap_all_elements dep_of "dependencies" l in
   let dep_mgmt =
-    find_element "dependencyManagement" l |>
-    findmap_all_elements dep_mgmt_of "dependencies"
+    find_element "dependencyManagement" l
+    |> findmap_all_elements dep_mgmt_of "dependencies"
   in
   let props = findmap_all_elements prop_of "properties" l in
   let modules = findmap_all_elements module_of "modules" l in
@@ -129,7 +126,7 @@ let project_of (l : Xmelly.t list) : t =
 
 let from_smelly (xml : Xmelly.t) =
   match xml with
-  | Element("project", _, l) -> project_of l
+  | Element ("project", _, l) -> project_of l
   | _ -> failwith "expecting 'project' as root node"
 
 let parse_file pomfn =
