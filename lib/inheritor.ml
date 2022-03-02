@@ -48,23 +48,22 @@ let read_pom (ref_fname : string) : t =
 
     let id : Pom.id = id_of parent parsed.id in
 
-    let dm_fn ({ ga = { group; artifact }; data } : Parser.dep) =
-      ((group, artifact), data)
-    in
+    let dp_fn (d : Parser.dep) = ((d.ga.group, d.ga.artifact), d.data) in
+
     let dep_mgmt =
-      Ga_map.from_list dm_fn parsed.dep_mgmt
+      Seq.map dp_fn parsed.dep_mgmt
+      |> Ga_map.of_seq
       |> merge_parent_map parent (fun p -> p.dep_mgmt)
     in
 
-    let dp_fn (d : Parser.dep) = ((d.ga.group, d.ga.artifact), d.data) in
     let deps =
-      Ga_map.from_list dp_fn parsed.deps
+      Seq.map dp_fn parsed.deps |> Ga_map.of_seq
       |> merge_parent_map parent (fun p -> p.deps)
     in
 
-    let props = List.to_seq parsed.props |> PropMap.of_seq |> props_of parent in
+    let props = PropMap.of_seq parsed.props |> props_of parent in
 
-    let modules = parsed.modules in
+    let modules = List.of_seq parsed.modules in
 
     { id; deps; dep_mgmt; props; modules }
   in

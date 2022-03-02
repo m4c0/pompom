@@ -4,7 +4,7 @@ type dep_data = {
   version : string option;
   scope : string option;
   tp : string option;
-  exclusions : Pom.ga list;
+  exclusions : Pom.ga Seq.t;
 }
 
 type dep = { ga : Pom.ga; data : dep_data }
@@ -14,10 +14,10 @@ type prop = string * string
 type t = {
   parent : parent option;
   id : id;
-  deps : dep list;
-  dep_mgmt : dep list;
-  props : prop list;
-  modules : string list;
+  deps : dep Seq.t;
+  dep_mgmt : dep Seq.t;
+  props : prop Seq.t;
+  modules : string Seq.t;
 }
 
 let findopt_element (t : string) (l : Xmelly.t list) : Xmelly.t list option =
@@ -31,8 +31,8 @@ let find_element (t : string) (l : Xmelly.t list) : Xmelly.t list =
   findopt_element t l |> Option.value ~default:[]
 
 let findmap_all_elements (fn : Xmelly.t -> 'a) (t : string) (l : Xmelly.t list)
-    : 'a list =
-  find_element t l |> List.map fn
+    : 'a Seq.t =
+  find_element t l |> List.to_seq |> Seq.map fn
 
 let find_text (t : string) (l : Xmelly.t list) : string option =
   let fn : Xmelly.t -> string option = function
