@@ -1,16 +1,14 @@
 type id = { group : string option; artifact : string; version : string option }
 
-type 'v depy = {
-  group : string;
-  artifact : string;
-  version : 'v;
+type dep_data = {
   scope : string option;
   tp : string option;
   exclusions : Pom.ga list;
 }
 
-type dep = string option depy
-type dm = string depy
+type 'v base_dep = { ga : Pom.ga; version : 'v; data : dep_data }
+type dep = string option base_dep
+type dm = string base_dep
 type parent = { group : string; artifact : string; version : string }
 type prop = string * string
 
@@ -46,28 +44,28 @@ let find_text (t : string) (l : Xmelly.t list) : string option =
 
 let get_or_fail msg = function Some x -> x | None -> failwith msg
 
+let ga_of (fld : string) (l : Xmelly.t list) : Pom.ga =
+  let find f = find_text f l |> get_or_fail (f ^ " is not set in " ^ fld) in
+  let group = find "groupId" in
+  let artifact = find "artifactId" in
+  { group; artifact }
+
 let excl_of : Xmelly.t -> Pom.ga = function
-  | Element ("exclusion", _, l) ->
-      let find f =
-        find_text f l |> get_or_fail (f ^ " is not set in exclusion")
-      in
-      let group = find "groupId" in
-      let artifact = find "artifactId" in
-      { group; artifact }
+  | Element ("exclusion", _, l) -> ga_of "exclusion" l
   | _ -> failwith "found weird stuff inside exclusions"
+
+let data_of (l : Xmelly.t list) : dep_data =
+  let scope = find_text "scope" l in
+  let tp = find_text "type" l in
+  let exclusions = findmap_all_elements excl_of "exclusions" l in
+  { scope; exclusions; tp }
 
 let dep_of : Xmelly.t -> dep = function
   | Element ("dependency", _, l) ->
-      let find f =
-        find_text f l |> get_or_fail (f ^ " is not set in dependency")
-      in
-      let group = find "groupId" in
-      let artifact = find "artifactId" in
+      let ga = ga_of "dependency" l in
       let version = find_text "version" l in
-      let scope = find_text "scope" l in
-      let tp = find_text "type" l in
-      let exclusions = findmap_all_elements excl_of "exclusions" l in
-      { group; artifact; version; scope; exclusions; tp }
+      let data = data_of l in
+      { ga; version; data }
   | _ -> failwith "found weird stuff inside dependencies"
 
 let dep_mgmt_of : Xmelly.t -> dm = function
@@ -75,13 +73,10 @@ let dep_mgmt_of : Xmelly.t -> dm = function
       let find f =
         find_text f l |> get_or_fail (f ^ " is not set in dependency management")
       in
-      let group = find "groupId" in
-      let artifact = find "artifactId" in
+      let ga = ga_of "dependency management" l in
       let version = find "version" in
-      let scope = find_text "scope" l in
-      let tp = find_text "type" l in
-      let exclusions = findmap_all_elements excl_of "exclusions" l in
-      { group; artifact; version; scope; tp; exclusions }
+      let data = data_of l in
+      { ga; version; data }
   | _ ->
       failwith "found weird stuff inside dependencies of dependency management"
 

@@ -63,8 +63,9 @@ let read_pom (ref_fname : string) : t =
 
     let id : Pom.id = id_of parent parsed.id in
 
-    let dm_fn ({ group; artifact; version; exclusions; scope; tp } : Parser.dm)
-        : (string * string) * dm =
+    let dm_fn
+        ({ ga = { group; artifact }; version; data = { exclusions; scope; tp } } :
+          Parser.dm) : (string * string) * dm =
       ((group, artifact), { version; scope; tp; exclusions })
     in
     let dep_mgmt =
@@ -73,10 +74,10 @@ let read_pom (ref_fname : string) : t =
     in
 
     let dp_fn (d : Parser.dep) =
-      let scope = d.scope in
+      let scope = d.data.scope in
       let version = d.version in
-      let exclusions = d.exclusions in
-      ((d.group, d.artifact), { scope; version; exclusions })
+      let exclusions = d.data.exclusions in
+      ((d.ga.group, d.ga.artifact), { scope; version; exclusions })
     in
     let deps =
       Ga_map.from_list dp_fn parsed.deps
