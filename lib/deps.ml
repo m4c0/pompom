@@ -18,7 +18,7 @@ let shallow_resolve (scope : Scopes.t) (fname : string) : Aggregator.t =
     p.deps
     |> Seq.filter (has_scope scope)
     |> Seq.map (find_version dm)
-    |> Seq.map (Propinator.apply_to_dep props)
+    |> Seq.map (Propinator.apply_to_dep props p)
   in
   Aggregator.aggregate { p with deps }
 
