@@ -3,22 +3,28 @@ type bom = string Ga_map.t
 type modules = string list
 type dep = Pom.dep
 
-let dep_from (dm : dep Ga_map.t) ga (d : dep) : string option =
-  match d.version with
-  | Some x -> Some x
-  | None -> (
-      match Ga_map.find_opt ga dm with
-      | Some { version = Some v; _ } -> Some v
-      | _ ->
-          "could not find version for " ^ ga.group ^ ":" ^ ga.artifact
-          |> failwith)
+let has_scope (s : Scopes.t) (d : dep) : bool = Scopes.matches s d.scope
 
-let resolve_dep_versions (s : Scopes.t) (i : Aggregator.t) k (v : dep) =
-  let has_scope = Scopes.matches s v.scope in
-  if not has_scope then None else dep_from i.dep_mgmt k v
+let find_version (dm : dep Ga_map.t) (d : dep) : dep =
+  match d.version with
+  | Some _ -> d
+  | None -> (
+      match Ga_map.find_opt d.ga dm with
+      | Some { version = Some v; _ } -> { d with version = Some v }
+      | _ ->
+          "could not find version for " ^ d.ga.group ^ ":" ^ d.ga.artifact
+          |> failwith)
 
 let resolve (scope : Scopes.t) pom_fname : id * bom * modules =
   let p = Inheritor.parse_and_merge pom_fname in
-  let i = Aggregator.read_pom p in
-  let deps = Ga_map.filter_map (resolve_dep_versions scope i) i.deps in
-  (i.id, deps, i.modules)
+  let props = Propinator.of_seq p.props in
+  let dm = Boomer.build_bom p in
+  let deps =
+    p.deps
+    |> Seq.filter (has_scope scope)
+    |> Seq.map (find_version dm)
+    |> Seq.map (Propinator.apply_to_dep props)
+  in
+
+  let a = Aggregator.aggregate { p with deps } in
+  (a.id, a.deps, a.modules)

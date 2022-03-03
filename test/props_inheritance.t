@@ -12,6 +12,11 @@
   >       <version>\${parent-prop}</version>
   >     </dependency>
   >     <dependency>
+  >       <groupId>from-parent</groupId>
+  >       <artifactId>broken-dep-mgmt</artifactId>
+  >       <version>\${invalid-prop}</version>
+  >     </dependency>
+  >     <dependency>
   >       <groupId>using</groupId>
   >       <artifactId>bom</artifactId>
   >       <version>\${parent-prop}</version>

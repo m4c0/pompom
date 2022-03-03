@@ -29,11 +29,9 @@ let rec from_pom (scope : scope) (fname : string) : t =
     flat_id id |> asset_fname "pom"
     |> Deps.resolve (Scopes.transitive_of scope)
     |> (fun (_, d, _) -> d)
-    |> Ga_map.to_seq |> Seq.map recurse |> Seq.concat |> Seq.cons id
+    |> Ga_map.to_seq |> Seq.flat_map recurse |> Seq.cons id
   in
-  let deps =
-    Ga_map.to_seq dmap |> Seq.map pom_deps |> Seq.concat |> Ga_map.of_seq
-  in
+  let deps = Ga_map.to_seq dmap |> Seq.flat_map pom_deps |> Ga_map.of_seq in
   { id; deps; modules }
 
 let from_java (scope : scope) fname =
