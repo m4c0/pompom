@@ -27,7 +27,8 @@ let rec parse_and_merge (pom : string) : Parser.t =
 
   let inherit_seq pfn =
     let v = pfn parsed in
-    Option.map pfn parent |> Option.value ~default:Seq.empty |> Seq.append v
+    let pv = Option.map pfn parent |> Option.value ~default:Seq.empty in
+    Seq.append pv v
   in
   let deps = inherit_seq (fun (p : Parser.t) -> p.deps) in
   let dep_mgmt = inherit_seq (fun (p : Parser.t) -> p.dep_mgmt) in
