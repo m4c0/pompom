@@ -7,9 +7,7 @@ type t = {
 }
 
 (** Transforms a "inherited" POM into a map-based structure *)
-let read_pom (ref_fname : string) : t =
-  let p = Inheritor.parse_and_merge ref_fname in
-
+let read_pom (p : Parser.t) : t =
   let group = Option.get p.id.group in
   let artifact = p.id.artifact in
   let version = Option.get p.id.version in
@@ -21,8 +19,8 @@ let read_pom (ref_fname : string) : t =
   let ga_seq_split (d : Pom.dep) = (d.ga, d) in
   let ga_mapinate (l : Pom.dep Seq.t) : Pom.dep Ga_map.t =
     Seq.map (Propinator.apply_to_dep props) l
-    |> Seq.map Boomer.merge_boms |> Seq.concat |> Seq.map ga_seq_split
-    |> Ga_map.of_seq
+    |> Seq.flat_map Boomer.merge_boms
+    |> Seq.map ga_seq_split |> Ga_map.of_seq
   in
   let deps = ga_mapinate p.deps in
   let dep_mgmt = ga_mapinate p.dep_mgmt in

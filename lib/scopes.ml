@@ -7,12 +7,9 @@ let scope_list = function
 
 let transitive_of _ = Compile (* TODO: this might be wrong *)
 
-let map_if_matches (tt : t) (scope : string option) fn =
+let matches (tt : t) (scope : string option) =
   let scopes = scope_list tt in
   Option.value ~default:"compile" scope
   |> String.equal
   |> (Fun.flip List.find_opt) scopes
-  |> Option.map fn
-
-let matches (tt : t) (scope : string option) =
-  map_if_matches tt scope Fun.id |> Option.is_some
+  |> Option.is_some
