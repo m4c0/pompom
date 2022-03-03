@@ -1,21 +1,12 @@
 type id = { group : string option; artifact : string; version : string option }
-
-type dep_data = {
-  version : string option;
-  scope : string option;
-  tp : string option;
-  exclusions : Pom.ga Seq.t;
-}
-
-type dep = { ga : Pom.ga; data : dep_data }
 type parent = string * string * string
 type prop = string * string
 
 type t = {
   parent : parent option;
   id : id;
-  deps : dep Seq.t;
-  dep_mgmt : dep Seq.t;
+  deps : Pom.dep Seq.t;
+  dep_mgmt : Pom.dep Seq.t;
   props : prop Seq.t;
   modules : string Seq.t;
 }
@@ -53,18 +44,14 @@ let excl_of : Xmelly.t -> Pom.ga = function
   | Element ("exclusion", _, l) -> ga_of "exclusion" l
   | _ -> failwith "found weird stuff inside exclusions"
 
-let data_of (l : Xmelly.t list) : dep_data =
-  let version = find_text "version" l in
-  let scope = find_text "scope" l in
-  let tp = find_text "type" l in
-  let exclusions = findmap_all_elements excl_of "exclusions" l in
-  { version; scope; exclusions; tp }
-
-let dep_of : Xmelly.t -> dep = function
+let dep_of : Xmelly.t -> Pom.dep = function
   | Element ("dependency", _, l) ->
       let ga = ga_of "dependency" l in
-      let data = data_of l in
-      { ga; data }
+      let version = find_text "version" l in
+      let scope = find_text "scope" l in
+      let tp = find_text "type" l in
+      let exclusions = findmap_all_elements excl_of "exclusions" l in
+      { ga; version; scope; exclusions; tp }
   | _ -> failwith "found weird stuff inside dependencies"
 
 let prop_of : Xmelly.t -> prop = function
