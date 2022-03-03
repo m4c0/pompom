@@ -20,3 +20,5 @@ let aggregate (p : Parser.t) : t =
   let deps = ga_mapinate p.deps in
 
   { id; deps; modules }
+
+let deps_of (a : t) = a.deps
