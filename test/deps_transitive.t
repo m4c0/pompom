@@ -1,23 +1,20 @@
-  $ ./xml.exe prj grampa 1 <<EOF
-  >   <groupId>prj</groupId>
-  >   <artifactId>grampa</artifactId>
-  >   <version>1</version>
+  $ ./xml.exe dep three 97
+  $ ./xml.exe dep two 98 <<EOF
   >   <dependencies>
   >     <dependency>
   >       <groupId>dep</groupId>
   >       <artifactId>three</artifactId>
   >       <version>97</version>
   >     </dependency>
+  >     <dependency>
+  >       <groupId>dep</groupId>
+  >       <artifactId>non-existent</artifactId>
+  >       <scope>provided</scope>
+  >     </dependency>
   >   </dependencies>
   > EOF
 
-  $ ./xml.exe prj parent 1 <<EOF
-  >   <parent>
-  >     <groupId>prj</groupId>
-  >     <artifactId>grampa</artifactId>
-  >     <version>1</version>
-  >   </parent>
-  >   <artifactId>parent</artifactId>
+  $ ./xml.exe dep one 99 <<EOF
   >   <dependencies>
   >     <dependency>
   >       <groupId>dep</groupId>
@@ -30,12 +27,9 @@
   $ cat > pom.xml <<EOF
   > <?xml version="1.0"?>
   > <project>
-  >   <parent>
-  >     <groupId>prj</groupId>
-  >     <artifactId>parent</artifactId>
-  >     <version>1</version>
-  >   </parent>
-  >   <artifactId>child</artifactId>
+  >   <groupId>got</groupId>
+  >   <artifactId>deps</artifactId>
+  >   <version>0</version>
   >   <dependencies>
   >     <dependency>
   >       <groupId>dep</groupId>
@@ -47,9 +41,9 @@
   > EOF
 
   $ ./pomdump.exe -j Test.java
-  id: prj:child-1
+  id: got:deps-0
   deps:
+    dep:one-99
     dep:three-97
     dep:two-98
-    dep:one-99
   modules:
