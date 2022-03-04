@@ -1,19 +1,28 @@
 type id = string * string * string
-type t = Aggregator.t
+type t = { id : id; modules : string Seq.t }
 type scope = Scopes.t
 
 let id_of (tt : t) : id = tt.id
-
-let deps_seq (tt : t) : id Seq.t =
-  Ga_map.to_seq tt.deps
-  |> Seq.map (fun ((ga : Pom.ga), v) -> (ga.group, ga.artifact, v))
-
-let modules_seq (tt : t) : string Seq.t = List.to_seq tt.modules
+let deps_seq (_ : t) : id Seq.t = Seq.empty
+let modules_seq (tt : t) : string Seq.t = tt.modules
 
 let asset_fname (ext : string) ((g, a, v) : id) : string =
   Repo.asset_fname ext g a v
 
-let from_pom (scope : scope) (fname : string) : t = Deps.resolve scope fname
+let from_pom (_ : scope) (fname : string) : t =
+  let p = Parser.parse_file fname in
+  let g =
+    Inheritable.get p.id.group
+      ~default:(Parent_id.group_fn p.parent)
+      ~label:"groupId"
+  in
+  let a = p.id.artifact in
+  let v =
+    Inheritable.get p.id.version
+      ~default:(Parent_id.version_fn p.parent)
+      ~label:"version"
+  in
+  { id = (g, a, v); modules = p.modules }
 
 let from_java (scope : scope) fname =
   let rec pom_of fname =
