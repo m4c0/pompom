@@ -9,20 +9,9 @@ let modules_seq (tt : t) : string Seq.t = tt.modules
 let asset_fname (ext : string) ((g, a, v) : id) : string =
   Repo.asset_fname ext g a v
 
-let from_pom (_ : scope) (fname : string) : t =
-  let p = Parser.parse_file fname in
-  let g =
-    Inheritable.get p.id.group
-      ~default:(Parent_id.group_fn p.parent)
-      ~label:"groupId"
-  in
-  let a = p.id.artifact in
-  let v =
-    Inheritable.get p.id.version
-      ~default:(Parent_id.version_fn p.parent)
-      ~label:"version"
-  in
-  { id = (g, a, v); modules = p.modules }
+let from_pom (s : scope) (fname : string) : t =
+  let tree = Tree.build_tree s fname in
+  { id = tree.id; modules = tree.modules }
 
 let from_java (scope : scope) fname =
   let rec pom_of fname =
