@@ -57,6 +57,6 @@
   $ ./pomdump.exe -j Test.java
   id: project:main-1
   deps:
-    dep:one-1.0
     dep:two-2.0
+    dep:one-1.0
   modules:

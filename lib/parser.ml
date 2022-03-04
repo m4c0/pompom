@@ -1,25 +1,11 @@
-type id = {
-  group : string Inheritable.t;
-  artifact : string;
-  version : string Inheritable.t;
-}
-
+type id = { group : string option; artifact : string; version : string option }
 type prop = string * string
-type ga = { group : string; artifact : string }
-
-type dep = {
-  ga : ga;
-  version : string option;
-  scope : string option;
-  tp : string option;
-  exclusions : ga Seq.t;
-}
 
 type t = {
   parent : Parent_id.t option;
   id : id;
-  deps : dep Seq.t;
-  dep_mgmt : dep Seq.t;
+  deps : Dependency.t Seq.t;
+  dep_mgmt : Dependency.t Seq.t;
   props : prop Seq.t;
   modules : string Seq.t;
 }
@@ -47,17 +33,17 @@ let find_text (t : string) (l : Xmelly.t list) : string option =
 
 let get_or_fail msg = function Some x -> x | None -> failwith msg
 
-let ga_of (fld : string) (l : Xmelly.t list) : ga =
+let ga_of (fld : string) (l : Xmelly.t list) : Dependency.ga =
   let find f = find_text f l |> get_or_fail (f ^ " is not set in " ^ fld) in
   let group = find "groupId" in
   let artifact = find "artifactId" in
   { group; artifact }
 
-let excl_of : Xmelly.t -> ga = function
+let excl_of : Xmelly.t -> Dependency.ga = function
   | Element ("exclusion", _, l) -> ga_of "exclusion" l
   | _ -> failwith "found weird stuff inside exclusions"
 
-let dep_of : Xmelly.t -> dep = function
+let dep_of : Xmelly.t -> Dependency.t = function
   | Element ("dependency", _, l) ->
       let ga = ga_of "dependency" l in
       let version = find_text "version" l in
@@ -87,9 +73,9 @@ let parent_of (l : Xmelly.t list) : Parent_id.t =
 
 let project_of (l : Xmelly.t list) : t =
   let parent = findopt_element "parent" l |> Option.map parent_of in
-  let group = find_text "groupId" l |> Inheritable.of_option in
+  let group = find_text "groupId" l in
   let artifact = find_text "artifactId" l |> get_or_fail "artifactId not set" in
-  let version = find_text "version" l |> Inheritable.of_option in
+  let version = find_text "version" l in
   let id : id = { group; artifact; version } in
   let deps = findmap_all_elements dep_of "dependencies" l in
   let dep_mgmt =
