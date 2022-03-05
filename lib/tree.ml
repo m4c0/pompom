@@ -1,6 +1,7 @@
 type t = {
   id : Pom.id;
   deps : Dependency.t Seq.t;
+  resolver : Pom.id -> t;
   modules : string Seq.t;
   props : Properties.t Seq.t;
 }
@@ -11,18 +12,28 @@ let seq_or_die fld msg (seq : 'a Seq.t) =
 let id_of (tt : t) = tt.id
 let modules_seq (tt : t) = tt.modules
 
-let deps_seq (tt : t) =
-  let fn (d : Dependency.t) =
-    let g, a, ov = Dependency.id_of d in
-    let v = Option.to_seq ov |> seq_or_die (g ^ ":" ^ a) "missing version" in
-    Seq.return (g, a, v)
-  in
+let find_ver (d : Dependency.t) =
+  let g, a, ov = Dependency.id_of d in
+  let v = Option.to_seq ov |> seq_or_die (g ^ ":" ^ a) "missing version" in
+  Seq.return (g, a, v)
 
+let rec resolve exists (tt : t) : Pom.id Seq.t =
   let apply_props (g, a, v) =
     let apply = Properties.apply tt.props in
     (apply g, apply a, apply v)
   in
-  tt.deps |> Dependency.unique_seq |> Seq.flat_map fn |> Seq.map apply_props
+
+  let this =
+    Seq.filter (Fun.negate exists) tt.deps
+    |> Seq.flat_map find_ver |> Seq.map apply_props |> Depmap.of_seq
+  in
+  let exists (d : Dependency.t) = exists d || Depmap.exists d.ga this in
+  let this_seq = Depmap.to_seq this in
+  this_seq |> Seq.map tt.resolver
+  |> Seq.flat_map (resolve exists)
+  |> Seq.append this_seq
+
+let deps_seq (tt : t) = resolve (fun _ -> false) tt
 
 let parser_id (p : Parser.t) (parent : Pom.id Seq.t) : Pom.id =
   let gv fld o fn =
@@ -55,15 +66,11 @@ let rec build_tree (scope : Scopes.t) (fname : string) : t =
 
   let my_deps = p.deps in
   let parent_deps = Seq.flat_map (fun p -> p.deps) parent in
-  let level_deps = List.to_seq [ my_deps; parent_deps ] |> Seq.concat in
+  let deps = List.to_seq [ my_deps; parent_deps ] |> Seq.concat in
 
   let transitive_scope = Scopes.transitive_of scope in
-  let transitive_deps = 
-    Seq.map (Dependency.filename_of "pom") level_deps |>
-    Seq.map (build_tree transitive_scope)
-    |> Seq.flat_map (fun d -> d.deps)
+  let resolver (g, a, v) =
+    Repo.asset_fname "pom" g a v |> build_tree transitive_scope
   in
-  let deps = 
-    Seq.append level_deps transitive_deps in
 
-  { id; deps; modules; props }
+  { id; deps; modules; props; resolver }
