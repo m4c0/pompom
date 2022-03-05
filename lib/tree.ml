@@ -1,87 +1,51 @@
 type t = {
-  id : string * string * string;
-  parent : t option Lazy.t;
-  props : Properties.t Seq.t;
-  deps : Dependency.map;
-  dm : Dependency.map;
+  id : Pom.id;
+  deps : Pom.id Seq.t;
   modules : string Seq.t;
+  props : Properties.t Seq.t;
 }
 
 let id_of (tt : t) = tt.id
-let ( |? ) opt fn = match opt with Some x -> Some x | None -> Lazy.force fn
-let ( |! ) opt fn = match opt with Some x -> x | None -> Lazy.force fn
-let ( |& ) opt fn = Option.map fn opt |> Option.join
-
-let hasnt_dep (tt : t) (group, artifact, _) =
-  Dependency.Map.find_opt { group; artifact } tt.deps |> Option.is_none
-
-let rec dm_version (ga : Dependency.ga) (tt : t) : string option =
-  Dependency.Map.find_opt ga tt.dm
-  |& Dependency.version_of
-  |? lazy (Lazy.force tt.parent |& dm_version ga)
-
-let apply_props p (g, a, v) =
-  let props = Properties.apply p in
-  (props g, props a, props v)
-
-let rec rec_deps_seq (tt : t) =
-  let fn (d : Dependency.t) =
-    let fail =
-      lazy
-        (Errors.fail
-           (d.ga.group ^ ":" ^ d.ga.artifact)
-           "could not resolve version")
-    in
-
-    let v = d.version |? lazy (dm_version d.ga tt) |! fail in
-    (d.ga.group, d.ga.artifact, v)
-  in
-  Dependency.seq_of_map tt.deps |> Seq.map fn |> Seq.append (parent_deps tt)
-
-and parent_deps (tt : t) =
-  Lazy.force tt.parent |> Option.to_seq |> Seq.flat_map rec_deps_seq
-  |> Seq.filter (hasnt_dep tt)
-
-let deps_seq (tt : t) = rec_deps_seq tt |> Seq.map (apply_props tt.props)
+let deps_seq (tt : t) = tt.deps
 let modules_seq (tt : t) = tt.modules
 
-let parser_id (p : Parser.t) =
+let seq_or_die fld msg (seq : 'a Seq.t) =
+  match seq () with Nil -> Errors.fail fld msg | Cons (v, _) -> v
+
+let parser_id (p : Parser.t) (parent : Pom.id Seq.t) : Pom.id =
   let gv fld o fn =
     let opt = Option.to_seq o in
-    let seq = Option.to_seq p.parent |> Seq.map fn |> Seq.append opt in
-    match seq () with
-    | Nil -> Errors.fail fld "missing field"
-    | Cons (v, _) -> v
+    parent |> Seq.map fn |> Seq.append opt |> seq_or_die fld "missing field"
   in
   let g = gv "groupId" p.id.group (fun (g, _, _) -> g) in
   let a = p.id.artifact in
   let v = gv "version" p.id.version (fun (_, _, v) -> v) in
   (g, a, v)
 
+let props_of (p : Parser.t) id parent =
+  let my_props = Properties.of_seq p.props in
+  let def_props = Properties.of_id id in
+  let parent_props = Seq.flat_map (fun p -> p.props) parent in
+  List.to_seq [ my_props; def_props; parent_props ] |> Seq.concat
+
 let rec build_tree (scope : Scopes.t) (fname : string) : t =
   let p = Parser.parse_file fname in
-  let id = parser_id p in
 
-  let recurse (pg, pa, pv) =
-    Repo.parent_of_pom fname pg pa pv |> build_tree scope
+  let parent =
+    p.parent
+    |> Option.map (fun (g, a, v) -> Repo.asset_fname "pom" g a v)
+    |> Option.map (build_tree scope)
+    |> Option.to_seq
   in
-  let deps =
-    Seq.filter (Dependency.has_scope scope) p.deps |> Dependency.map_of_seq
-  in
+  let id = parent |> Seq.map (fun p -> p.id) |> parser_id p in
+  let modules = p.modules in
+  let props = props_of p id parent in
 
-  let predefs = Properties.of_id id in
-  let props = Properties.of_seq p.props |> Seq.append predefs in
-
-  let bom =
-    p.dep_mgmt
-    |> Seq.filter Dependency.is_bom
-    |> Dependency.unique_seq
-    |> Seq.map (Dependency.filename_of "pom")
-    |> Seq.map (Properties.apply props)
-    |> Seq.map (build_tree scope)
-    |> Seq.flat_map (fun d -> Dependency.seq_of_map d.dm)
+  let fn (d : Dependency.t) =
+    let g, a, ov = Dependency.id_of d in
+    let v = Option.to_seq ov |> seq_or_die (g ^ ":" ^ a) "missing version" in
+    Seq.return (g, a, v)
   in
-  let dep_mgmt = p.dep_mgmt |> Seq.filter (Fun.negate Dependency.is_bom) in
-  let dm = Seq.append dep_mgmt bom |> Dependency.map_of_seq in
-  let parent = lazy (Option.map recurse p.parent) in
-  { id; parent; deps; dm; props; modules = p.modules }
+  let deps = Seq.flat_map fn p.deps in
+
+  { id; deps; modules; props }
