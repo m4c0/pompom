@@ -64,7 +64,7 @@ let rec build_tree (scope : Scopes.t) (fname : string) : t =
   let modules = p.modules in
   let props = props_of p id parent in
 
-  let my_deps = p.deps in
+  let my_deps = Seq.filter (Dependency.has_scope scope) p.deps in
   let parent_deps = Seq.flat_map (fun p -> p.deps) parent in
   let deps = List.to_seq [ my_deps; parent_deps ] |> Seq.concat in
 

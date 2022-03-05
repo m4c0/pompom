@@ -44,6 +44,6 @@
   id: got:deps-0
   deps:
     dep:one-99
-    dep:three-97
     dep:two-98
+    dep:three-97
   modules:

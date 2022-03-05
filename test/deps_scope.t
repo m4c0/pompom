@@ -19,7 +19,7 @@
   >     <dependency>
   >       <groupId>dep</groupId>
   >       <artifactId>two</artifactId>
-  >       <scope>3.0</scope>
+  >       <version>3.0</version>
   >     </dependency>
   >     <dependency>
   >       <groupId>dep</groupId>
