@@ -1,3 +1,5 @@
 (library
  (public_name pompom)
- (libraries str xmelly))
+ (libraries str xmelly)
+ (inline_tests)
+ (preprocess (pps ppx_inline_test)))
