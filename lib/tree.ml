@@ -73,7 +73,7 @@ let rec build_tree (scope : Scopes.t) (fname : string) : t =
   let recurse (pg, pa, pv) =
     Repo.parent_of_pom fname pg pa pv |> build_tree scope
   in
-  let deps = Dependency.map_of_seq p.deps in
+  let deps = Seq.filter (Dependency.has_scope scope) p.deps |> Dependency.map_of_seq in
   let dm =
     p.dep_mgmt
     |> Seq.filter (Fun.negate Dependency.is_bom)

@@ -12,6 +12,7 @@ let id_of (tt : t) = (tt.ga.group, tt.ga.artifact, tt.version)
 let version_of (tt : t) = tt.version
 
 let is_bom (tt : t) = tt.scope = Some("import") && tt.tp = Some("pom")
+let has_scope (s : Scopes.t) (tt : t) = Scopes.matches s tt.scope
 
 module Map = Map.Make (struct
   type t = ga
