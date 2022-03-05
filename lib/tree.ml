@@ -4,7 +4,7 @@ type t = {
   props : Properties.t Seq.t;
   deps : Dependency.map;
   dm : Dependency.map;
-  parsed : Parser.t;
+  modules : string Seq.t;
 }
 
 let id_of (tt : t) = tt.id
@@ -43,7 +43,7 @@ and parent_deps (tt : t) =
   |> Seq.filter (hasnt_dep tt)
 
 let deps_seq (tt : t) = rec_deps_seq tt |> Seq.map (apply_props tt.props)
-let modules_seq (tt : t) = tt.parsed.modules
+let modules_seq (tt : t) = tt.modules
 
 let parser_id (p : Parser.t) =
   let gv fld o fn =
@@ -84,4 +84,4 @@ let rec build_tree (scope : Scopes.t) (fname : string) : t =
   let dep_mgmt = p.dep_mgmt |> Seq.filter (Fun.negate Dependency.is_bom) in
   let dm = Seq.append dep_mgmt bom |> Dependency.map_of_seq in
   let parent = lazy (Option.map recurse p.parent) in
-  { id; parent; deps; dm; props; parsed = p }
+  { id; parent; deps; dm; props; modules = p.modules }
