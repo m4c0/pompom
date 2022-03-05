@@ -14,4 +14,5 @@ let of_seq (seq : (string * string * string) Seq.t) =
   Seq.fold_left fn Map.empty seq
 
 let to_seq (tt : t) = Map.to_seq tt |> Seq.map (fun ((g, a), v) -> (g, a, v))
-let exists (ga : Dependency.ga) (tt : t) = Map.find_opt (ga.group, ga.artifact) tt |> Option.is_some
+let find_opt (d : Dependency.t) (tt : t) = Map.find_opt (d.ga.group, d.ga.artifact) tt 
+let exists (d : Dependency.t) (tt : t) = find_opt d tt |> Option.is_some

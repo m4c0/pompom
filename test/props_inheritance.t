@@ -61,7 +61,7 @@
   $ ./pomdump.exe -j Test.java
   id: using:props-1.0
   deps:
-    from-parent:using-child-prop-v
     from-child:using-parent-prop-v
+    from-parent:using-child-prop-v
     from-parent:using-dep-mgmt-v
   modules:

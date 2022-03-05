@@ -2,6 +2,7 @@ type t = {
   id : Pom.id;
   deps : Dependency.t Seq.t;
   resolver : Pom.id -> t;
+  dep_mgmt : Dependency.t -> string Seq.t;
   modules : string Seq.t;
   props : Properties.t Seq.t;
 }
@@ -12,22 +13,26 @@ let seq_or_die fld msg (seq : 'a Seq.t) =
 let id_of (tt : t) = tt.id
 let modules_seq (tt : t) = tt.modules
 
-let find_ver (d : Dependency.t) =
-  let g, a, ov = Dependency.id_of d in
-  let v = Option.to_seq ov |> seq_or_die (g ^ ":" ^ a) "missing version" in
-  Seq.return (g, a, v)
-
 let rec resolve exists (tt : t) : Pom.id Seq.t =
   let apply_props (g, a, v) =
     let apply = Properties.apply tt.props in
     (apply g, apply a, apply v)
   in
+  let find_version (d : Dependency.t) =
+    let g, a, ov = Dependency.id_of d in
+    let dep_v = Option.to_seq ov in
+    let dm_v = tt.dep_mgmt d in
+    let v =
+      Seq.append dep_v dm_v |> seq_or_die (g ^ ":" ^ a) "missing version"
+    in
+    (g, a, v)
+  in
 
   let this =
     Seq.filter (Fun.negate exists) tt.deps
-    |> Seq.flat_map find_ver |> Seq.map apply_props |> Depmap.of_seq
+    |> Seq.map find_version |> Seq.map apply_props |> Depmap.of_seq
   in
-  let exists (d : Dependency.t) = exists d || Depmap.exists d.ga this in
+  let exists (d : Dependency.t) = exists d || Depmap.exists d this in
   let this_seq = Depmap.to_seq this in
   this_seq |> Seq.map tt.resolver
   |> Seq.flat_map (resolve exists)
@@ -73,4 +78,15 @@ let rec build_tree (scope : Scopes.t) (fname : string) : t =
     Repo.asset_fname "pom" g a v |> build_tree transitive_scope
   in
 
-  { id; deps; modules; props; resolver }
+  let dm =
+    Seq.filter (Fun.negate Dependency.is_bom) p.dep_mgmt
+    |> Seq.filter_map Dependency.map_id
+    |> Depmap.of_seq
+  in
+  let dep_mgmt (d : Dependency.t) =
+    let my_dm = Seq.return dm |> Seq.map (Depmap.find_opt d) |> Seq.flat_map Option.to_seq in
+    let parent_dm = parent |> Seq.flat_map (fun p -> p.dep_mgmt d) in
+    Seq.append my_dm parent_dm
+  in
+
+  { id; deps; modules; props; resolver; dep_mgmt }
