@@ -78,15 +78,24 @@ let rec build_tree (scope : Scopes.t) (fname : string) : t =
     Repo.asset_fname "pom" g a v |> build_tree transitive_scope
   in
 
+  let bom =
+    Seq.filter Dependency.is_bom p.dep_mgmt
+    |> Seq.map (Dependency.filename_of "pom")
+    |> Seq.map (build_tree scope)
+    |> Seq.map (fun tt -> tt.dep_mgmt)
+  in
   let dm =
     Seq.filter (Fun.negate Dependency.is_bom) p.dep_mgmt
     |> Seq.filter_map Dependency.map_id
     |> Depmap.of_seq
   in
   let dep_mgmt (d : Dependency.t) =
-    let my_dm = Seq.return dm |> Seq.map (Depmap.find_opt d) |> Seq.flat_map Option.to_seq in
+    let my_dm =
+      Seq.return dm |> Seq.map (Depmap.find_opt d) |> Seq.flat_map Option.to_seq
+    in
     let parent_dm = parent |> Seq.flat_map (fun p -> p.dep_mgmt d) in
-    Seq.append my_dm parent_dm
+    let bom_dm = Seq.flat_map (fun x -> x d) bom in
+    [ my_dm; parent_dm; bom_dm ] |> List.to_seq |> Seq.concat
   in
 
   { id; deps; modules; props; resolver; dep_mgmt }
