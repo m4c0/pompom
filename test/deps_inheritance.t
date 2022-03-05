@@ -49,7 +49,7 @@
   $ ./pomdump.exe -j Test.java
   id: prj:child-1
   deps:
-    dep:three-97
-    dep:two-98
     dep:one-99
+    dep:two-98
+    dep:three-97
   modules:

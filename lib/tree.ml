@@ -46,6 +46,17 @@ let rec build_tree (scope : Scopes.t) (fname : string) : t =
     let v = Option.to_seq ov |> seq_or_die (g ^ ":" ^ a) "missing version" in
     Seq.return (g, a, v)
   in
-  let deps = Seq.flat_map fn p.deps in
+
+  let my_deps = Seq.flat_map fn p.deps in
+  let parent_deps = Seq.flat_map (fun p -> p.deps) parent in
+
+  let apply_props (g, a, v) =
+    let apply = Properties.apply props in
+    (apply g, apply a, apply v)
+  in
+
+  let deps =
+    List.to_seq [ my_deps; parent_deps ] |> Seq.concat |> Seq.map apply_props
+  in
 
   { id; deps; modules; props }
