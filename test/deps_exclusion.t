@@ -24,8 +24,10 @@
   >       <artifactId>two</artifactId>
   >       <version>2.0</version>
   >       <exclusions>
-  >         <groupId>dep</groupId>
-  >         <artifactId>two-broken</artifactId>
+  >         <exclusion>
+  >           <groupId>dep</groupId>
+  >           <artifactId>two-broken</artifactId>
+  >         </exclusion>
   >       </exclusions>
   >     </dependency>
   >   </dependencies>
@@ -46,8 +48,10 @@
   >       <artifactId>one</artifactId>
   >       <version>1.0</version>
   >       <exclusions>
-  >         <groupId>dep</groupId>
-  >         <artifactId>one-broken</artifactId>
+  >         <exclusion>
+  >           <groupId>dep</groupId>
+  >           <artifactId>one-broken</artifactId>
+  >         </exclusion>
   >       </exclusions>
   >     </dependency>
   >   </dependencies>

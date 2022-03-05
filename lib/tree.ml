@@ -13,10 +13,19 @@ let seq_or_die fld msg (seq : 'a Seq.t) =
 let id_of (tt : t) = tt.id
 let modules_seq (tt : t) = tt.modules
 
-let rec resolve exists (tt : t) : Pom.id Seq.t =
-  let apply_props (g, a, v) =
+let is_excl excl (d : Dependency.ga) =
+  let excl = Seq.filter (fun x -> x = d) excl in
+  match excl () with Nil -> false | _ -> true
+
+let%test "is_excl" =
+  let ga : Dependency.ga = { group = "aa"; artifact = "bb" } in
+  let seq = Seq.return ga in
+  is_excl seq ga && is_excl Seq.empty ga |> not
+
+let rec resolve exists excl (tt : t) : Pom.id Seq.t =
+  let apply_props (g, a, v, d) =
     let apply = Properties.apply tt.props in
-    (apply g, apply a, apply v)
+    (apply g, apply a, (apply v, d))
   in
   let find_version (d : Dependency.t) =
     let g, a, ov = Dependency.id_of d in
@@ -25,20 +34,28 @@ let rec resolve exists (tt : t) : Pom.id Seq.t =
     let v =
       Seq.append dep_v dm_v |> seq_or_die (g ^ ":" ^ a) "missing version"
     in
-    (g, a, v)
+    (g, a, v, d)
   in
 
-  let this =
-    Seq.filter (Fun.negate exists) tt.deps
+  let ex_ex (d : Dependency.t) = exists d || is_excl excl d.ga in
+
+  let deps =
+    Seq.filter (Fun.negate ex_ex) tt.deps
     |> Seq.map find_version |> Seq.map apply_props |> Depmap.of_seq
   in
-  let exists (d : Dependency.t) = exists d || Depmap.exists d this in
-  let this_seq = Depmap.to_seq this in
-  this_seq |> Seq.map tt.resolver
-  |> Seq.flat_map (resolve exists)
-  |> Seq.append this_seq
+  let exists (d : Dependency.t) =
+    ex_ex d ||
+    Depmap.exists d deps 
+  in
+  let dep_seq = Depmap.to_seq deps in
+  let dep_map (g, a, (v, (d : Dependency.t))) =
+    tt.resolver (g, a, v) |> resolve exists d.exclusions
+  in
+  let next_seq = Seq.flat_map dep_map dep_seq in
+  let this_seq = Seq.map (fun (g, a, (v, _)) -> (g, a, v)) dep_seq in
+  Seq.append this_seq next_seq
 
-let deps_seq (tt : t) = resolve (fun _ -> false) tt
+let deps_seq (tt : t) = resolve (fun _ -> false) Seq.empty tt
 
 let parser_id (p : Parser.t) (parent : Pom.id Seq.t) : Pom.id =
   let gv fld o fn =
