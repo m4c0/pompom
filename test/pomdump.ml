@@ -31,4 +31,6 @@ let () =
     print_indent indent "modules:";
     Pompom.modules_seq p |> Seq.iter (print_indent ni)
   in
-  Pompom.from_java Compile !java |> printobj ""
+  try Pompom.from_java Compile !java |> printobj "" with
+  | Failure x -> print_endline ("[FAILURE] " ^ x)
+  | Sys_error x -> print_endline ("[SYSERR] " ^ x)

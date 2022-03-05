@@ -13,8 +13,7 @@
   > EOF
 
   $ ./pomdump.exe -j Test.java
-  Fatal error: exception Sys_error("./.m2/repository/iam/parent/1/parent-1.pom: No such file or directory")
-  [2]
+  [SYSERR] ./.m2/repository/iam/parent/1/parent-1.pom: No such file or directory
 
   $ ./xml.exe iam parent 1 <<EOF
   >   <parent>
@@ -27,8 +26,7 @@
   $ ./pomdump.exe -j Test.java
   id: hello:world-1.0
   deps:
-  Fatal error: exception Sys_error("./.m2/repository/iam/grampa/2/grampa-2.pom: No such file or directory")
-  [2]
+  [SYSERR] ./.m2/repository/iam/grampa/2/grampa-2.pom: No such file or directory
 
   $ ./xml.exe iam grampa 2
 
