@@ -45,14 +45,23 @@ and parent_deps (tt : t) =
 let deps_seq (tt : t) = rec_deps_seq tt |> Seq.map (apply_props tt.props)
 let modules_seq (tt : t) = tt.parsed.modules
 
-let rec build_tree (scope : Scopes.t) (fname : string) : t =
-  let fail fld = lazy (Errors.fail fld "missing field") in
-  let p = Parser.parse_file fname in
-  let g = p.id.group |? lazy (Parent_id.group_of p.parent) |! fail "groupId" in
-  let a = p.id.artifact in
-  let v =
-    p.id.version |? lazy (Parent_id.version_of p.parent) |! fail "version"
+let parser_id (p : Parser.t) =
+  let gv fld o fn =
+    let opt = Option.to_seq o in
+    let seq = Option.to_seq p.parent |> Seq.map fn |> Seq.append opt in
+    match seq () with
+    | Nil -> Errors.fail fld "missing field"
+    | Cons (v, _) -> v
   in
+  let g = gv "groupId" p.id.group (fun (g, _, _) -> g) in
+  let a = p.id.artifact in
+  let v = gv "version" p.id.version (fun (_, _, v) -> v) in
+  (g, a, v)
+
+let rec build_tree (scope : Scopes.t) (fname : string) : t =
+  let p = Parser.parse_file fname in
+  let id = parser_id p in
+
   let recurse (pg, pa, pv) =
     Repo.parent_of_pom fname pg pa pv |> build_tree scope
   in
@@ -60,7 +69,7 @@ let rec build_tree (scope : Scopes.t) (fname : string) : t =
     Seq.filter (Dependency.has_scope scope) p.deps |> Dependency.map_of_seq
   in
 
-  let predefs = Properties.of_id (g, a, v) in
+  let predefs = Properties.of_id id in
   let props = Properties.of_seq p.props |> Seq.append predefs in
 
   let bom =
@@ -75,4 +84,4 @@ let rec build_tree (scope : Scopes.t) (fname : string) : t =
   let dep_mgmt = p.dep_mgmt |> Seq.filter (Fun.negate Dependency.is_bom) in
   let dm = Seq.append dep_mgmt bom |> Dependency.map_of_seq in
   let parent = lazy (Option.map recurse p.parent) in
-  { id = (g, a, v); parent; deps; dm; props; parsed = p }
+  { id; parent; deps; dm; props; parsed = p }
