@@ -1,3 +1,6 @@
+  $ ./xml.exe dep one 99
+  $ ./xml.exe dep two 98
+  $ ./xml.exe dep three 97
   $ ./xml.exe prj grampa 1 <<EOF
   >   <groupId>prj</groupId>
   >   <artifactId>grampa</artifactId>

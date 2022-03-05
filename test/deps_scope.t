@@ -25,6 +25,7 @@
   >       <groupId>dep</groupId>
   >       <artifactId>prunned-too</artifactId>
   >       <scope>test</scope>
+  >     </dependency>
   >   </dependencies>
   > EOF
 
