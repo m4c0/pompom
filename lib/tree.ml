@@ -55,7 +55,15 @@ let rec build_tree (scope : Scopes.t) (fname : string) : t =
 
   let my_deps = p.deps in
   let parent_deps = Seq.flat_map (fun p -> p.deps) parent in
+  let level_deps = List.to_seq [ my_deps; parent_deps ] |> Seq.concat in
 
-  let deps = List.to_seq [ my_deps; parent_deps ] |> Seq.concat in
+  let transitive_scope = Scopes.transitive_of scope in
+  let transitive_deps = 
+    Seq.map (Dependency.filename_of "pom") level_deps |>
+    Seq.map (build_tree transitive_scope)
+    |> Seq.flat_map (fun d -> d.deps)
+  in
+  let deps = 
+    Seq.append level_deps transitive_deps in
 
   { id; deps; modules; props }
