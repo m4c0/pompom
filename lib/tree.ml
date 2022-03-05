@@ -1,16 +1,28 @@
 type t = {
   id : Pom.id;
-  deps : Pom.id Seq.t;
+  deps : Dependency.t Seq.t;
   modules : string Seq.t;
   props : Properties.t Seq.t;
 }
 
-let id_of (tt : t) = tt.id
-let deps_seq (tt : t) = tt.deps
-let modules_seq (tt : t) = tt.modules
-
 let seq_or_die fld msg (seq : 'a Seq.t) =
   match seq () with Nil -> Errors.fail fld msg | Cons (v, _) -> v
+
+let id_of (tt : t) = tt.id
+let modules_seq (tt : t) = tt.modules
+
+let deps_seq (tt : t) =
+  let fn (d : Dependency.t) =
+    let g, a, ov = Dependency.id_of d in
+    let v = Option.to_seq ov |> seq_or_die (g ^ ":" ^ a) "missing version" in
+    Seq.return (g, a, v)
+  in
+
+  let apply_props (g, a, v) =
+    let apply = Properties.apply tt.props in
+    (apply g, apply a, apply v)
+  in
+  tt.deps |> Dependency.unique_seq |> Seq.flat_map fn |> Seq.map apply_props
 
 let parser_id (p : Parser.t) (parent : Pom.id Seq.t) : Pom.id =
   let gv fld o fn =
@@ -41,22 +53,9 @@ let rec build_tree (scope : Scopes.t) (fname : string) : t =
   let modules = p.modules in
   let props = props_of p id parent in
 
-  let fn (d : Dependency.t) =
-    let g, a, ov = Dependency.id_of d in
-    let v = Option.to_seq ov |> seq_or_die (g ^ ":" ^ a) "missing version" in
-    Seq.return (g, a, v)
-  in
-
-  let my_deps = Seq.flat_map fn p.deps in
+  let my_deps = p.deps in
   let parent_deps = Seq.flat_map (fun p -> p.deps) parent in
 
-  let apply_props (g, a, v) =
-    let apply = Properties.apply props in
-    (apply g, apply a, apply v)
-  in
-
-  let deps =
-    List.to_seq [ my_deps; parent_deps ] |> Seq.concat |> Seq.map apply_props
-  in
+  let deps = List.to_seq [ my_deps; parent_deps ] |> Seq.concat in
 
   { id; deps; modules; props }

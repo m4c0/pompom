@@ -31,4 +31,9 @@ let map_of_seq (seq : t Seq.t) =
   Seq.map (fun (tt : t) -> (tt.ga, tt)) seq |> Map.of_seq
 
 let seq_of_map (m : map) = Map.to_seq m |> Seq.map (fun (_, v) -> v)
-let unique_seq (seq : t Seq.t) = map_of_seq seq |> seq_of_map
+
+let unique_seq (seq : t Seq.t) =
+  let fn m (tt : t) =
+    match Map.find_opt tt.ga m with Some _ -> m | None -> Map.add tt.ga tt m
+  in
+  Seq.fold_left fn Map.empty seq |> seq_of_map

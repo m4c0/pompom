@@ -50,6 +50,6 @@
   id: prj:child-1
   deps:
     dep:one-99
-    dep:two-98
     dep:three-97
+    dep:two-98
   modules:

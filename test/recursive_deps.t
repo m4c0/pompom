@@ -40,6 +40,6 @@
   $ ./pomdump.exe -j Test.java
   id: iam:world-1
   deps:
-    dep:two-8
     dep:one-9
+    dep:two-8
   modules:
