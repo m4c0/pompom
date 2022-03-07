@@ -13,7 +13,8 @@
   > EOF
 
   $ ./pomdump.exe -j Test.java
-  [SYSERR] ./.m2/repository/iam/parent/1/parent-1.pom: No such file or directory
+  [FAILURE] ./.m2/repository/iam/parent/1/parent-1.pom: No such file or directory
+  while parsing ./pom.xml
 
   $ ./xml.exe iam parent 1 <<EOF
   >   <parent>
@@ -24,7 +25,9 @@
   > EOF
 
   $ ./pomdump.exe -j Test.java
-  [SYSERR] ./.m2/repository/iam/grampa/2/grampa-2.pom: No such file or directory
+  [FAILURE] ./.m2/repository/iam/grampa/2/grampa-2.pom: No such file or directory
+  while parsing ./.m2/repository/iam/parent/1/parent-1.pom
+  while parsing ./pom.xml
 
   $ ./xml.exe iam grampa 2
 

@@ -76,12 +76,17 @@ let props_of (p : Parser.t) id parent =
   List.to_seq [ my_props; def_props; parent_props ] |> Seq.concat
 
 let rec build_tree (scope : Scopes.t) (fname : string) : t =
+  let try_build_tree s f =
+    try build_tree s f with
+    | Failure x -> x ^ "\nwhile parsing " ^ fname |> failwith
+    | Sys_error x -> x ^ "\nwhile parsing " ^ fname |> failwith
+  in
   let p = Parser.parse_file fname in
 
   let parent =
     p.parent
     |> Option.map (fun (g, a, v) -> Repo.asset_fname "pom" g a v)
-    |> Option.map (build_tree scope)
+    |> Option.map (try_build_tree scope)
     |> Option.to_seq
   in
   let id = parent |> Seq.map (fun p -> p.id) |> parser_id p in
@@ -94,14 +99,14 @@ let rec build_tree (scope : Scopes.t) (fname : string) : t =
 
   let transitive_scope = Scopes.transitive_of scope in
   let resolver (g, a, v) =
-    Repo.asset_fname "pom" g a v |> build_tree transitive_scope
+    Repo.asset_fname "pom" g a v |> try_build_tree transitive_scope
   in
 
   let deps_dm = Depmgmt.of_dep_seq deps |> Seq.return in
   let bom_dm =
     Seq.filter Dependency.is_bom p.dep_mgmt
     |> Seq.map (Dependency.filename_of "pom")
-    |> Seq.map (build_tree scope)
+    |> Seq.map (try_build_tree scope)
     |> Seq.flat_map (fun tt -> tt.dep_mgmt)
   in
   let my_dm =
