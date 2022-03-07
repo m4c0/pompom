@@ -1,10 +1,17 @@
+type 'a ctx = {
+  scope : Scopes.t;
+  cache : 'a Seq.t Tree_cache.t;
+  props : Properties.t Seq.t;
+  dep_mgmt : Depmgmt.t Seq.t;
+}
 type t = {
   id : Pom.id;
   deps : Dependency.t Seq.t;
-  resolver : t -> Pom.id -> bool -> t Seq.t;
+  resolver : t ctx -> Pom.id -> bool -> t Seq.t;
   dep_mgmt : Depmgmt.t Seq.t;
   modules : string Seq.t;
   props : Properties.t Seq.t;
+  ctx : t ctx;
 }
 
 let seq_or_die fld msg (seq : 'a Seq.t) =
@@ -49,7 +56,7 @@ let rec resolve exists excl (tt : t) : Pom.id Seq.t =
   let exists (d : Dependency.t) = ex_ex d || Depmap.exists d deps in
 
   let dep_map (g, a, (v, d)) =
-    tt.resolver tt (g, a, v) (opt d) |> Seq.map (fun t -> (d, t))
+    tt.resolver tt.ctx (g, a, v) (opt d) |> Seq.map (fun t -> (d, t))
   in
   let dep_seq = Depmap.to_seq deps |> Seq.flat_map dep_map in
 
@@ -70,34 +77,35 @@ let parser_id (p : Parser.t) (parent : Pom.id Seq.t) : Pom.id =
   let v = gv "version" p.id.version (fun (_, _, v) -> v) in
   (g, a, v)
 
-let props_of (p : Parser.t) id parent =
+let props_of (p : Parser.t) id parent base_props =
   let my_props = Properties.of_seq p.props in
   let def_props = Properties.of_id id in
   let parent_props = Seq.flat_map (fun p -> p.props) parent in
-  List.to_seq [ my_props; def_props; parent_props ] |> Seq.concat
+  List.to_seq [ def_props; base_props; my_props; parent_props ] |> Seq.concat
 
-let rec really_build_tree cache (scope : Scopes.t) (fname : string) (base_dm : Depmgmt.t Seq.t) : t =
-  let really_try_build_tree is_opt s bdm f : t Seq.t =
+let rec really_build_tree (ctx : t ctx) (fname : string) : t =
+  let really_try_build_tree is_opt c f : t Seq.t =
     if is_opt then
-      try really_build_tree cache s f bdm |> Seq.return with _ -> Seq.empty
+      try really_build_tree c f |> Seq.return with _ -> Seq.empty
     else
-      try really_build_tree cache s f bdm |> Seq.return with
+      try really_build_tree c f |> Seq.return with
       | Failure x -> x ^ "\nwhile parsing " ^ fname |> failwith
       | Sys_error x -> x ^ "\nwhile parsing " ^ fname |> failwith
   in
-  let try_build_tree is_opt s bdm f : t Seq.t =
-    Tree_cache.retrieve f (really_try_build_tree is_opt s bdm) cache
+  let try_build_tree is_opt c f : t Seq.t =
+    Tree_cache.retrieve f (really_try_build_tree is_opt c) c.cache
   in
   let p = Parser.parse_file fname in
+  let scope = ctx.scope in 
 
   let parent =
     p.parent |> Option.to_seq
     |> Seq.map (fun (g, a, v) -> Repo.asset_fname "pom" g a v)
-    |> Seq.flat_map (try_build_tree false scope base_dm)
+    |> Seq.flat_map (try_build_tree false ctx)
   in
   let id = parent |> Seq.map (fun p -> p.id) |> parser_id p in
   let modules = p.modules in
-  let props = props_of p id parent in
+  let props = props_of p id parent ctx.props in
 
   let my_deps = Seq.filter (Dependency.has_scope scope) p.deps in
   let parent_deps = Seq.flat_map (fun p -> p.deps) parent in
@@ -105,9 +113,11 @@ let rec really_build_tree cache (scope : Scopes.t) (fname : string) (base_dm : D
 
   let transitive_scope = Scopes.transitive_of scope in
   let resolver ctx_t (g, a, v) opt =
-    Repo.asset_fname "pom" g a v |> try_build_tree opt transitive_scope ctx_t.dep_mgmt
+    let new_ctx = { ctx_t with scope = transitive_scope} in
+    Repo.asset_fname "pom" g a v |> try_build_tree opt new_ctx
   in
 
+  let base_dm = ctx.dep_mgmt in
   let deps_dm = Depmgmt.of_dep_seq deps |> Seq.return in
   let my_dm =
     Seq.filter (Fun.negate Dependency.is_bom) p.dep_mgmt
@@ -121,16 +131,18 @@ let rec really_build_tree cache (scope : Scopes.t) (fname : string) (base_dm : D
     let opt = Option.value ~default:false d.optional in
 
     Dependency.filename_of "pom" d
-    |> Properties.apply props |> try_build_tree opt scope base_dm
+    |> Properties.apply props |> try_build_tree opt ctx
     |> Seq.flat_map (fun tt -> tt.dep_mgmt)
   in
   let bom_dm =
     Seq.filter Dependency.is_bom p.dep_mgmt |> Seq.flat_map bom_mapper
   in
   let dep_mgmt = Seq.append dm_so_far bom_dm in
+  let ctx = { ctx with dep_mgmt; props } in
 
-  { id; deps; modules; props; resolver; dep_mgmt }
+  { id; deps; modules; props; resolver; dep_mgmt; ctx }
 
 let build_tree (scope : Scopes.t) (fname : string) : t =
   let cache = Tree_cache.empty () in
-  really_build_tree cache scope fname Seq.empty
+  let ctx = { scope; cache; dep_mgmt = Seq.empty; props = Seq.empty } in
+  really_build_tree ctx fname 
