@@ -4,6 +4,7 @@ type 'a ctx = {
   props : Properties.t Seq.t;
   dep_mgmt : Depmgmt.t Seq.t;
 }
+
 type t = {
   id : Pom.id;
   deps : Dependency.t Seq.t;
@@ -85,8 +86,7 @@ let props_of (p : Parser.t) id parent base_props =
 
 let rec really_build_tree (ctx : t ctx) (fname : string) : t =
   let really_try_build_tree is_opt c f : t Seq.t =
-    if is_opt then
-      try really_build_tree c f |> Seq.return with _ -> Seq.empty
+    if is_opt then try really_build_tree c f |> Seq.return with _ -> Seq.empty
     else
       try really_build_tree c f |> Seq.return with
       | Failure x -> x ^ "\nwhile parsing " ^ fname |> failwith
@@ -96,7 +96,7 @@ let rec really_build_tree (ctx : t ctx) (fname : string) : t =
     Tree_cache.retrieve f (really_try_build_tree is_opt c) c.cache
   in
   let p = Parser.parse_file fname in
-  let scope = ctx.scope in 
+  let scope = ctx.scope in
 
   let parent =
     p.parent |> Option.to_seq
@@ -113,7 +113,7 @@ let rec really_build_tree (ctx : t ctx) (fname : string) : t =
 
   let transitive_scope = Scopes.transitive_of scope in
   let resolver ctx_t (g, a, v) opt =
-    let new_ctx = { ctx_t with scope = transitive_scope} in
+    let new_ctx = { ctx_t with scope = transitive_scope } in
     Repo.asset_fname "pom" g a v |> try_build_tree opt new_ctx
   in
 
@@ -124,7 +124,9 @@ let rec really_build_tree (ctx : t ctx) (fname : string) : t =
     |> Depmgmt.of_dep_seq |> Seq.return
   in
   let parent_dm = parent |> Seq.flat_map (fun p -> p.dep_mgmt) in
-  let dm_so_far = [ base_dm; deps_dm; my_dm; parent_dm ] |> List.to_seq |> Seq.concat in
+  let dm_so_far =
+    [ base_dm; deps_dm; my_dm; parent_dm ] |> List.to_seq |> Seq.concat
+  in
 
   let bom_mapper (d : Dependency.t) =
     (* TODO: does this inherit? *)
@@ -145,4 +147,4 @@ let rec really_build_tree (ctx : t ctx) (fname : string) : t =
 let build_tree (scope : Scopes.t) (fname : string) : t =
   let cache = Tree_cache.empty () in
   let ctx = { scope; cache; dep_mgmt = Seq.empty; props = Seq.empty } in
-  really_build_tree ctx fname 
+  really_build_tree ctx fname
