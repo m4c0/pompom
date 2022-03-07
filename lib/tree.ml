@@ -8,10 +8,8 @@ type 'a ctx = {
 type t = {
   id : Pom.id;
   deps : Dependency.t Seq.t;
-  resolver : t ctx -> Pom.id -> bool -> t Seq.t;
-  dep_mgmt : Depmgmt.t Seq.t;
+  resolver : bool -> t ctx -> string -> t Seq.t;
   modules : string Seq.t;
-  props : Properties.t Seq.t;
   ctx : t ctx;
 }
 
@@ -32,16 +30,19 @@ let%test "is_excl" =
 
 let rec resolve exists excl (tt : t) : Pom.id Seq.t =
   let apply_props (g, a, v, d) =
-    let apply = Properties.apply tt.props in
+    let apply = Properties.apply tt.ctx.props in
     (apply g, apply a, (apply v, d))
   in
-  let dm d fn = Seq.flat_map (Depmgmt.find d) tt.dep_mgmt |> Seq.flat_map fn in
+  let dm d fn =
+    Seq.flat_map (Depmgmt.find d) tt.ctx.dep_mgmt |> Seq.flat_map fn
+  in
   let opt d =
     match dm d Depmgmt.optional_of () with Nil -> false | Cons (v, _) -> v
   in
   let exclusions d = dm d Depmgmt.exclusions_of in
   let find_version (d : Dependency.t) =
-    let g, a, _ = Dependency.id_of d in
+    let g = d.ga.group in
+    let a = d.ga.artifact in
     let v =
       dm d Depmgmt.version_of |> seq_or_die (g ^ ":" ^ a) "missing version"
     in
@@ -57,7 +58,11 @@ let rec resolve exists excl (tt : t) : Pom.id Seq.t =
   let exists (d : Dependency.t) = ex_ex d || Depmap.exists d deps in
 
   let dep_map (g, a, (v, d)) =
-    tt.resolver tt.ctx (g, a, v) (opt d) |> Seq.map (fun t -> (d, t))
+    let transitive_scope = Scopes.transitive_of tt.ctx.scope in
+    let new_ctx = { tt.ctx with scope = transitive_scope } in
+    Repo.asset_fname "pom" g a v
+    |> tt.resolver (opt d) new_ctx
+    |> Seq.map (fun t -> (d, t))
   in
   let dep_seq = Depmap.to_seq deps |> Seq.flat_map dep_map in
 
@@ -81,7 +86,7 @@ let parser_id (p : Parser.t) (parent : Pom.id Seq.t) : Pom.id =
 let props_of (p : Parser.t) id parent base_props =
   let my_props = Properties.of_seq p.props in
   let def_props = Properties.of_id id in
-  let parent_props = Seq.flat_map (fun p -> p.props) parent in
+  let parent_props = Seq.flat_map (fun p -> p.ctx.props) parent in
   List.to_seq [ def_props; base_props; my_props; parent_props ] |> Seq.concat
 
 let rec really_build_tree (ctx : t ctx) (fname : string) : t =
@@ -111,19 +116,13 @@ let rec really_build_tree (ctx : t ctx) (fname : string) : t =
   let parent_deps = Seq.flat_map (fun p -> p.deps) parent in
   let deps = List.to_seq [ my_deps; parent_deps ] |> Seq.concat in
 
-  let transitive_scope = Scopes.transitive_of scope in
-  let resolver ctx_t (g, a, v) opt =
-    let new_ctx = { ctx_t with scope = transitive_scope } in
-    Repo.asset_fname "pom" g a v |> try_build_tree opt new_ctx
-  in
-
   let base_dm = ctx.dep_mgmt in
   let deps_dm = Depmgmt.of_dep_seq deps |> Seq.return in
   let my_dm =
     Seq.filter (Fun.negate Dependency.is_bom) p.dep_mgmt
     |> Depmgmt.of_dep_seq |> Seq.return
   in
-  let parent_dm = parent |> Seq.flat_map (fun p -> p.dep_mgmt) in
+  let parent_dm = parent |> Seq.flat_map (fun p -> p.ctx.dep_mgmt) in
   let dm_so_far =
     [ base_dm; deps_dm; my_dm; parent_dm ] |> List.to_seq |> Seq.concat
   in
@@ -134,7 +133,7 @@ let rec really_build_tree (ctx : t ctx) (fname : string) : t =
 
     Dependency.filename_of "pom" d
     |> Properties.apply props |> try_build_tree opt ctx
-    |> Seq.flat_map (fun tt -> tt.dep_mgmt)
+    |> Seq.flat_map (fun tt -> tt.ctx.dep_mgmt)
   in
   let bom_dm =
     Seq.filter Dependency.is_bom p.dep_mgmt |> Seq.flat_map bom_mapper
@@ -142,7 +141,9 @@ let rec really_build_tree (ctx : t ctx) (fname : string) : t =
   let dep_mgmt = Seq.append dm_so_far bom_dm in
   let ctx = { ctx with dep_mgmt; props } in
 
-  { id; deps; modules; props; resolver; dep_mgmt; ctx }
+  let resolver = try_build_tree in
+
+  { id; deps; modules; resolver; ctx }
 
 let build_tree (scope : Scopes.t) (fname : string) : t =
   let cache = Tree_cache.empty () in
