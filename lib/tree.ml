@@ -28,6 +28,10 @@ let rec resolve exists excl (tt : t) : Pom.id Seq.t =
     (apply g, apply a, (apply v, d))
   in
   let dm d fn = Seq.flat_map (Depmgmt.find d) tt.dep_mgmt |> Seq.flat_map fn in
+  let opt d =
+    match dm d Depmgmt.optional_of () with Nil -> false | Cons (v, _) -> v
+  in
+  let exclusions d = dm d Depmgmt.exclusions_of in
   let find_version (d : Dependency.t) =
     let g, a, _ = Dependency.id_of d in
     let v =
@@ -43,16 +47,15 @@ let rec resolve exists excl (tt : t) : Pom.id Seq.t =
     |> Seq.map find_version |> Seq.map apply_props |> Depmap.of_seq
   in
   let exists (d : Dependency.t) = ex_ex d || Depmap.exists d deps in
-  let dep_seq = Depmap.to_seq deps in
-  let dep_map (g, a, (v, (d : Dependency.t))) =
-    let opt =
-      match dm d Depmgmt.optional_of () with Nil -> false | Cons (v, _) -> v
-    in
-    let exclusions = dm d Depmgmt.exclusions_of in
-    tt.resolver (g, a, v) opt |> Seq.flat_map (resolve exists exclusions)
+
+  let dep_map (g, a, (v, d)) =
+    tt.resolver (g, a, v) (opt d) |> Seq.map (fun t -> (d, t))
   in
-  let next_seq = Seq.flat_map dep_map dep_seq in
-  let this_seq = Seq.map (fun (g, a, (v, _)) -> (g, a, v)) dep_seq in
+  let dep_seq = Depmap.to_seq deps |> Seq.flat_map dep_map in
+
+  let next_map (d, t) = resolve exists (exclusions d) t in
+  let next_seq = Seq.flat_map next_map dep_seq in
+  let this_seq = Seq.map (fun (_, t) -> t.id) dep_seq in
   Seq.append this_seq next_seq
 
 let deps_seq (tt : t) = resolve (fun _ -> false) Seq.empty tt
