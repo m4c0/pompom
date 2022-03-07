@@ -9,5 +9,5 @@ let retrieve k fn (m : 'a t) : 'a =
   | Some x -> x
   | None ->
       let res = fn k in
-      m := Map.add k (fn k) !m;
+      m := Map.add k res !m;
       res
