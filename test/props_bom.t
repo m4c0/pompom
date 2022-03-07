@@ -24,12 +24,13 @@
   >   <groupId>using</groupId>
   >   <artifactId>props</artifactId>
   >   <version>1.0</version>
+  >   <properties><dep.bom.version>2.0</dep.bom.version></properties>
   >   <dependencyManagement>
   >     <dependencies>
   >       <dependency>
   >         <groupId>dep</groupId>
   >         <artifactId>bom</artifactId>
-  >         <version>2.0</version>
+  >         <version>\${dep.bom.version}</version>
   >         <type>pom</type>
   >         <scope>import</scope>
   >       </dependency>

@@ -106,6 +106,7 @@ let rec build_tree (scope : Scopes.t) (fname : string) : t =
   let bom_dm =
     Seq.filter Dependency.is_bom p.dep_mgmt
     |> Seq.map (Dependency.filename_of "pom")
+    |> Seq.map (Properties.apply props)
     |> Seq.map (try_build_tree scope)
     |> Seq.flat_map (fun tt -> tt.dep_mgmt)
   in
