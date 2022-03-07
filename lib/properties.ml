@@ -26,7 +26,9 @@ let of_id (g, a, v) =
 
 let%test _ =
   let ofid = of_id ("gg", "aa", "vv") in
-  let ofsq = List.to_seq [ ("aa", "${project.version}"); ("bb", "${aa}") ] |> of_seq in
+  let ofsq =
+    List.to_seq [ ("aa", "${project.version}"); ("bb", "${aa}") ] |> of_seq
+  in
   let chain = Seq.append ofid ofsq in
   let apply = apply chain in
   apply "${aa} ${bb} ${project.groupId}" = "vv vv gg"

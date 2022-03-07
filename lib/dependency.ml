@@ -16,4 +16,5 @@ let has_scope (s : Scopes.t) (tt : t) = Scopes.matches s tt.scope
 let filename_of (ext : string) (tt : t) : string =
   Repo.asset_fname ext tt.ga.group tt.ga.artifact (Option.get tt.version)
 
-let map_id (tt : t) = Option.map (fun v -> (tt.ga.group, tt.ga.artifact, v)) tt.version
+let map_id (tt : t) =
+  Option.map (fun v -> (tt.ga.group, tt.ga.artifact, v)) tt.version
