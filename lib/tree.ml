@@ -2,7 +2,7 @@ type t = {
   id : Pom.id;
   deps : Dependency.t Seq.t;
   resolver : Pom.id -> t;
-  dep_mgmt : Dependency.t -> string Seq.t;
+  dep_mgmt : Depmgmt.t Seq.t;
   modules : string Seq.t;
   props : Properties.t Seq.t;
 }
@@ -28,12 +28,13 @@ let rec resolve exists excl (tt : t) : Pom.id Seq.t =
     (apply g, apply a, (apply v, d))
   in
   let find_version (d : Dependency.t) =
-    let g, a, ov = Dependency.id_of d in
-    let dep_v = Option.to_seq ov in
-    let dm_v = tt.dep_mgmt d in
-    let v =
-      Seq.append dep_v dm_v |> seq_or_die (g ^ ":" ^ a) "missing version"
+    let g, a, _ = Dependency.id_of d in
+    let dm fn fld =
+      Seq.flat_map (Depmgmt.find d) tt.dep_mgmt
+      |> Seq.flat_map fn
+      |> seq_or_die (g ^ ":" ^ a) ("missing " ^ fld)
     in
+    let v = dm Depmgmt.version_of "version" in
     (g, a, v, d)
   in
 
@@ -43,13 +44,14 @@ let rec resolve exists excl (tt : t) : Pom.id Seq.t =
     Seq.filter (Fun.negate ex_ex) tt.deps
     |> Seq.map find_version |> Seq.map apply_props |> Depmap.of_seq
   in
-  let exists (d : Dependency.t) =
-    ex_ex d ||
-    Depmap.exists d deps 
-  in
+  let exists (d : Dependency.t) = ex_ex d || Depmap.exists d deps in
   let dep_seq = Depmap.to_seq deps in
   let dep_map (g, a, (v, (d : Dependency.t))) =
-    tt.resolver (g, a, v) |> resolve exists d.exclusions
+    let exclusions =
+      Seq.flat_map (Depmgmt.find d) tt.dep_mgmt
+      |> Seq.flat_map Depmgmt.exclusions_of
+    in
+    tt.resolver (g, a, v) |> resolve exists exclusions
   in
   let next_seq = Seq.flat_map dep_map dep_seq in
   let this_seq = Seq.map (fun (g, a, (v, _)) -> (g, a, v)) dep_seq in
@@ -95,24 +97,20 @@ let rec build_tree (scope : Scopes.t) (fname : string) : t =
     Repo.asset_fname "pom" g a v |> build_tree transitive_scope
   in
 
-  let bom =
+  let deps_dm = Depmgmt.of_dep_seq deps |> Seq.return in
+  let bom_dm =
     Seq.filter Dependency.is_bom p.dep_mgmt
     |> Seq.map (Dependency.filename_of "pom")
     |> Seq.map (build_tree scope)
-    |> Seq.map (fun tt -> tt.dep_mgmt)
+    |> Seq.flat_map (fun tt -> tt.dep_mgmt)
   in
-  let dm =
+  let my_dm =
     Seq.filter (Fun.negate Dependency.is_bom) p.dep_mgmt
-    |> Seq.filter_map Dependency.map_id
-    |> Depmap.of_seq
+    |> Depmgmt.of_dep_seq |> Seq.return
   in
-  let dep_mgmt (d : Dependency.t) =
-    let my_dm =
-      Seq.return dm |> Seq.map (Depmap.find_opt d) |> Seq.flat_map Option.to_seq
-    in
-    let parent_dm = parent |> Seq.flat_map (fun p -> p.dep_mgmt d) in
-    let bom_dm = Seq.flat_map (fun x -> x d) bom in
-    [ my_dm; parent_dm; bom_dm ] |> List.to_seq |> Seq.concat
+  let parent_dm = parent |> Seq.flat_map (fun p -> p.dep_mgmt) in
+  let dep_mgmt =
+    [ deps_dm; my_dm; parent_dm; bom_dm ] |> List.to_seq |> Seq.concat
   in
 
   { id; deps; modules; props; resolver; dep_mgmt }
