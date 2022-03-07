@@ -76,13 +76,17 @@ let props_of (p : Parser.t) id parent =
   let parent_props = Seq.flat_map (fun p -> p.props) parent in
   List.to_seq [ my_props; def_props; parent_props ] |> Seq.concat
 
-let rec build_tree (scope : Scopes.t) (fname : string) : t =
-  let try_build_tree is_opt s f : t Seq.t =
-    if is_opt then try build_tree s f |> Seq.return with _ -> Seq.empty
+let rec really_build_tree cache (scope : Scopes.t) (fname : string) : t =
+  let really_try_build_tree is_opt s f : t Seq.t =
+    if is_opt then
+      try really_build_tree cache s f |> Seq.return with _ -> Seq.empty
     else
-      try build_tree s f |> Seq.return with
+      try really_build_tree cache s f |> Seq.return with
       | Failure x -> x ^ "\nwhile parsing " ^ fname |> failwith
       | Sys_error x -> x ^ "\nwhile parsing " ^ fname |> failwith
+  in
+  let try_build_tree is_opt s f : t Seq.t =
+    Tree_cache.retrieve f (really_try_build_tree is_opt s) cache
   in
   let p = Parser.parse_file fname in
 
@@ -126,3 +130,7 @@ let rec build_tree (scope : Scopes.t) (fname : string) : t =
   let dep_mgmt = Seq.append dm_so_far bom_dm in
 
   { id; deps; modules; props; resolver; dep_mgmt }
+
+let build_tree (scope : Scopes.t) (fname : string) : t =
+  let cache = Tree_cache.empty () in
+  really_build_tree cache scope fname
