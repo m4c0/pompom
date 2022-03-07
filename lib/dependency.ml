@@ -6,6 +6,7 @@ type t = {
   scope : string option;
   tp : string option;
   exclusions : ga Seq.t;
+  optional : bool option;
 }
 
 let id_of (tt : t) = (tt.ga.group, tt.ga.artifact, tt.version)
