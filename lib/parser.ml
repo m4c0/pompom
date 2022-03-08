@@ -1,8 +1,9 @@
 type id = { group : string option; artifact : string; version : string option }
 type prop = string * string
+type parent = string * string * string
 
 type t = {
-  parent : Pom.id option;
+  parent : parent option;
   id : id;
   deps : Dependency.t Seq.t;
   dep_mgmt : Dependency.t Seq.t;
@@ -68,7 +69,7 @@ let module_of : Xmelly.t -> string = function
   | Element (x, _, _) -> failwith (x ^ ": invalid module format")
   | Text x -> failwith (x ^ ": loose text found inside modules")
 
-let parent_of (l : Xmelly.t list) : Pom.id =
+let parent_of (l : Xmelly.t list) : parent =
   let find f = find_text f l |> get_or_fail (f ^ " is not set in parent") in
   let group = find "groupId" in
   let artifact = find "artifactId" in

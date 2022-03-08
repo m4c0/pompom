@@ -1,6 +1,7 @@
+type id = string * string * string
 type t = {
-  id : Pom.id;
-  parent : Pom.id option;
+  id : id;
+  parent : id option;
 }
 
 let id_of t = t.id

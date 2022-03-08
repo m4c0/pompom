@@ -28,7 +28,7 @@ let%test "is_excl" =
   let seq = Seq.return ga in
   is_excl seq ga && is_excl Seq.empty ga |> not
 
-let rec resolve exists excl (tt : t) : Pom.id Seq.t =
+let rec resolve exists excl (tt : t) : Efpom.id Seq.t =
   let apply_props (g, a, v, d) =
     let apply = Properties.apply tt.ctx.props in
     (apply g, apply a, (apply v, d))
