@@ -1,7 +1,7 @@
 type 'a ctx = {
   scope : Scopes.t;
   cache : 'a Seq.t Tree_cache.t;
-  props : Properties.t Seq.t;
+  props : Properties.t;
   dep_mgmt : Depmgmt.t Seq.t;
 }
 
@@ -73,12 +73,6 @@ let rec resolve exists excl (tt : t) : Efpom.id Seq.t =
 
 let deps_seq (tt : t) = resolve (fun _ -> false) Seq.empty tt
 
-let props_of (p : Parser.t) (fpom : Efpom.t) parent base_props =
-  let my_props = Properties.of_seq p.props in
-  let def_props = Properties.of_id (Efpom.id_of fpom) in
-  let parent_props = Seq.flat_map (fun p -> p.ctx.props) parent in
-  List.to_seq [ def_props; base_props; my_props; parent_props ] |> Seq.concat
-
 let rec really_build_tree (ctx : t ctx) (fname : string) : t =
   let really_try_build_tree is_opt c f : t Seq.t =
     if is_opt then try really_build_tree c f |> Seq.return with _ -> Seq.empty
@@ -100,7 +94,6 @@ let rec really_build_tree (ctx : t ctx) (fname : string) : t =
     |> Seq.flat_map (try_build_tree false ctx)
   in
   let modules = p.modules in
-  let props = props_of p fpom parent ctx.props in
 
   let my_deps = Seq.filter (Dependency.has_scope scope) p.deps in
   let parent_deps = Seq.flat_map (fun p -> p.deps) parent in
@@ -122,14 +115,14 @@ let rec really_build_tree (ctx : t ctx) (fname : string) : t =
     let opt = Option.value ~default:false d.optional in
 
     Dependency.filename_of "pom" d
-    |> Properties.apply props |> try_build_tree opt ctx
+    |> Properties.apply ctx.props |> try_build_tree opt ctx
     |> Seq.flat_map (fun tt -> tt.ctx.dep_mgmt)
   in
   let bom_dm =
     Seq.filter Dependency.is_bom p.dep_mgmt |> Seq.flat_map bom_mapper
   in
   let dep_mgmt = Seq.append dm_so_far bom_dm in
-  let ctx = { ctx with dep_mgmt; props } in
+  let ctx = { ctx with dep_mgmt } in
 
   let resolver = try_build_tree in
 
@@ -137,5 +130,5 @@ let rec really_build_tree (ctx : t ctx) (fname : string) : t =
 
 let build_tree (scope : Scopes.t) (fname : string) : t =
   let cache = Tree_cache.empty () in
-  let ctx = { scope; cache; dep_mgmt = Seq.empty; props = Seq.empty } in
+  let ctx = { scope; cache; dep_mgmt = Seq.empty; props = Seq.empty |> Properties.of_seq } in
   really_build_tree ctx fname
