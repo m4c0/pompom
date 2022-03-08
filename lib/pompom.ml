@@ -2,6 +2,8 @@ type id = string * string * string
 type t = { id : id; deps : id Seq.t; modules : string Seq.t }
 type scope = Scopes.t
 
+module Impl_EffectivePom = Efpom
+
 let id_of (tt : t) : id = tt.id
 let deps_seq (tt : t) : id Seq.t = tt.deps
 let modules_seq (tt : t) : string Seq.t = tt.modules
@@ -17,9 +19,4 @@ let from_pom (s : scope) (fname : string) : t =
     modules = Tree.modules_seq tree;
   }
 
-let from_java (scope : scope) fname =
-  let rec pom_of fname =
-    let pom = Filename.concat fname "pom.xml" in
-    if Sys.file_exists pom then pom else fname |> Filename.dirname |> pom_of
-  in
-  pom_of fname |> from_pom scope
+let from_java (scope : scope) fname = Repo.pom_of_java fname |> from_pom scope

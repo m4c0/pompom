@@ -1,4 +1,9 @@
 (executable
+ (name efpom)
+ (libraries pompom)
+ (modules efpom))
+
+(executable
  (name pomdump)
  (libraries pompom)
  (modules pomdump))
@@ -13,4 +18,4 @@
    (HOME "."))))
 
 (cram
- (deps pomdump.exe xml.exe))
+ (deps efpom.exe pomdump.exe xml.exe))

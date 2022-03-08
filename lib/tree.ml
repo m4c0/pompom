@@ -6,7 +6,7 @@ type 'a ctx = {
 }
 
 type t = {
-  id : Pom.id;
+  fpom : Efpom.t;
   deps : Dependency.t Seq.t;
   resolver : bool -> t ctx -> string -> t Seq.t;
   modules : string Seq.t;
@@ -16,7 +16,7 @@ type t = {
 let seq_or_die fld msg (seq : 'a Seq.t) =
   match seq () with Nil -> Errors.fail fld msg | Cons (v, _) -> v
 
-let id_of (tt : t) = tt.id
+let id_of (tt : t) = Efpom.id_of tt.fpom
 let modules_seq (tt : t) = tt.modules
 
 let is_excl excl (d : Dependency.ga) =
@@ -68,24 +68,14 @@ let rec resolve exists excl (tt : t) : Pom.id Seq.t =
 
   let next_map (d, t) = resolve exists (exclusions d) t in
   let next_seq = Seq.flat_map next_map dep_seq in
-  let this_seq = Seq.map (fun (_, t) -> t.id) dep_seq in
+  let this_seq = Seq.map (fun (_, t) -> Efpom.id_of t.fpom) dep_seq in
   Seq.append this_seq next_seq
 
 let deps_seq (tt : t) = resolve (fun _ -> false) Seq.empty tt
 
-let parser_id (p : Parser.t) (parent : Pom.id Seq.t) : Pom.id =
-  let gv fld o fn =
-    let opt = Option.to_seq o in
-    parent |> Seq.map fn |> Seq.append opt |> seq_or_die fld "missing field"
-  in
-  let g = gv "groupId" p.id.group (fun (g, _, _) -> g) in
-  let a = p.id.artifact in
-  let v = gv "version" p.id.version (fun (_, _, v) -> v) in
-  (g, a, v)
-
-let props_of (p : Parser.t) id parent base_props =
+let props_of (p : Parser.t) (fpom : Efpom.t) parent base_props =
   let my_props = Properties.of_seq p.props in
-  let def_props = Properties.of_id id in
+  let def_props = Properties.of_id (Efpom.id_of fpom) in
   let parent_props = Seq.flat_map (fun p -> p.ctx.props) parent in
   List.to_seq [ def_props; base_props; my_props; parent_props ] |> Seq.concat
 
@@ -101,6 +91,7 @@ let rec really_build_tree (ctx : t ctx) (fname : string) : t =
     Tree_cache.retrieve f (really_try_build_tree is_opt c) c.cache
   in
   let p = Parser.parse_file fname in
+  let fpom = Efpom.from_pom fname in
   let scope = ctx.scope in
 
   let parent =
@@ -108,9 +99,8 @@ let rec really_build_tree (ctx : t ctx) (fname : string) : t =
     |> Seq.map (fun (g, a, v) -> Repo.asset_fname "pom" g a v)
     |> Seq.flat_map (try_build_tree false ctx)
   in
-  let id = parent |> Seq.map (fun p -> p.id) |> parser_id p in
   let modules = p.modules in
-  let props = props_of p id parent ctx.props in
+  let props = props_of p fpom parent ctx.props in
 
   let my_deps = Seq.filter (Dependency.has_scope scope) p.deps in
   let parent_deps = Seq.flat_map (fun p -> p.deps) parent in
@@ -143,7 +133,7 @@ let rec really_build_tree (ctx : t ctx) (fname : string) : t =
 
   let resolver = try_build_tree in
 
-  { id; deps; modules; resolver; ctx }
+  { fpom; deps; modules; resolver; ctx }
 
 let build_tree (scope : Scopes.t) (fname : string) : t =
   let cache = Tree_cache.empty () in

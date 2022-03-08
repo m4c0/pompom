@@ -2,6 +2,8 @@ type id = string * string * string
 type t
 type scope = Scopes.t
 
+module Impl_EffectivePom = Efpom
+
 val id_of : t -> id
 val deps_seq : t -> id Seq.t
 val modules_seq : t -> string Seq.t
