@@ -1,4 +1,17 @@
+  $ ./xml.exe project grampa 2.2 <<EOF
+  >   <properties>
+  >     <grampa.one>dunno</grampa.one>
+  >     <grampa.two>maybe \${child.one}</grampa.two>
+  >     <grampa.three>actually \${parent.two}</grampa.three>
+  >   </properties>
+  > EOF
+
   $ ./xml.exe project parent 1.0 <<EOF
+  >   <parent>
+  >     <groupId>project</groupId>
+  >     <artifactId>grampa</artifactId>
+  >     <version>2.2</version>
+  >   </parent>
   >   <properties>
   >     <parent.one>no</parent.one>
   >     <parent.two>maybe \${child.one}</parent.two>
@@ -28,6 +41,9 @@
     child.one: yes
     child.three: 1.0
     child.two: maybe yes
+    grampa.one: dunno
+    grampa.three: actually maybe yes
+    grampa.two: maybe yes
     parent.one: no
     parent.three: actually maybe yes
     parent.two: maybe yes
