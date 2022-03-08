@@ -31,13 +31,15 @@
   >     <child.one>yes</child.one>
   >     <child.two>maybe \${child.one}</child.two>
   >     <child.three>\${project.version}</child.three>
+  >     <child.four>\${something.invalid}</child.four>
   >   </properties>
   > </project>
 
-  $ ./efpom.exe src/main/java/Test.java <<EOF
+  $ ./efpom.exe src/main/java/Test.java
   id: project:child-1.0
   parent: project:parent-1.0
   properties:
+    child.four: ${something.invalid}
     child.one: yes
     child.three: 1.0
     child.two: maybe yes
@@ -47,3 +49,6 @@
     parent.one: no
     parent.three: actually maybe yes
     parent.two: maybe yes
+    project.artifactId: child
+    project.groupId: project
+    project.version: 1.0

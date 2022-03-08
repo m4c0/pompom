@@ -1,9 +1,5 @@
 type id = string * string * string
-type t = {
-  id : id;
-  parent : id option;
-  properties : Properties.t;
-}
+type t = { id : id; parent : id option; properties : Properties.t }
 
 let id_of t = t.id
 let parent_of t = t.parent
@@ -22,23 +18,29 @@ let id_of_parsed (p : Parser.t) parent =
       let v = Option.get p.id.version in
       (g, p.id.artifact, v)
 
-let merged_props id props (parent : t option) =
-  let p0 = Properties.of_id id |> Properties.add_seq props in
+let merged_props props (parent : t option) =
+  let p0 = Properties.of_seq props in
   match parent with
   | None -> p0
-  | Some pp -> Properties.add_seq (Properties.to_seq pp.properties) p0
+  | Some pp -> Properties.merge_left p0 pp.properties
 
 let rec inheritor fname : t =
   let p = Parser.parse_file fname in
   let parent = p.parent in
-  let parent_p = Option.map (Repo.parent_of_pom fname) p.parent |> Option.map inheritor in
+  let parent_p =
+    Option.map (Repo.parent_of_pom fname) p.parent |> Option.map inheritor
+  in
   let id = id_of_parsed p parent in
-  let properties = merged_props id p.props parent_p in
+  let properties = merged_props p.props parent_p in
   { id; parent; properties }
 
-let from_pom fname : t = 
+let from_pom fname : t =
   let i = inheritor fname in
-  let properties = Properties.resolve i.properties in
+  let properties =
+    Properties.of_id i.id
+    |> Properties.merge_right i.properties
+    |> Properties.resolve
+  in
   { i with properties }
 
 let from_java fname = Repo.pom_of_java fname |> from_pom

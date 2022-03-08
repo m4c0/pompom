@@ -8,14 +8,13 @@ let rec apply (chain : t) (s : string) : string =
   let pvalue (s : string) : string =
     let k = Str.matched_group 1 s in
     let ch = PropMap.find_opt k chain in
-    match ch with
-    | None -> Errors.fail k "missing property"
-    | Some v -> v
+    match ch with None -> Str.matched_group 0 s | Some v -> v
   in
   let ns = Str.global_substitute prop_regex pvalue s in
   if ns = s then s else apply chain ns
 
-let add_seq = PropMap.add_seq
+let merge_left = PropMap.merge (fun _ a b -> match a with None -> b | _ -> a)
+let merge_right = PropMap.merge (fun _ a b -> match b with None -> a | _ -> b)
 let of_seq = PropMap.of_seq
 let to_seq = PropMap.to_seq
 
@@ -24,12 +23,12 @@ let rec resolve t =
   if next = t then t else resolve next
 
 let of_id (g, a, v) =
-  let gg = ("project.groupId", g) in
-  let aa = ("project.artifactId", a) in
-  let vv = ("project.version", v) in
-  List.to_seq [ gg; aa; vv ] |> PropMap.of_seq
+  PropMap.empty
+  |> PropMap.add "project.groupId" g
+  |> PropMap.add "project.artifactId" a
+  |> PropMap.add "project.version" v
 
 let%test _ =
-  let seq = List.to_seq [ ("aa", "vv"); ( "bb", "${aa}" ) ] in
-  let applier = of_id ("gg", "aa", "vv") |> add_seq seq |> apply in
+  let seq = List.to_seq [ ("aa", "vv"); ("bb", "${aa}") ] |> of_seq in
+  let applier = of_id ("gg", "aa", "vv") |> merge_left seq |> apply in
   applier "${aa} ${bb} ${project.groupId}" = "vv vv gg"
