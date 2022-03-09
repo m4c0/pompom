@@ -3,6 +3,7 @@
   >     <grampa.one>dunno</grampa.one>
   >     <grampa.two>maybe \${child.one}</grampa.two>
   >     <grampa.three>actually \${parent.two}</grampa.three>
+  >     <grampa.classifier/>
   >   </properties>
   >   <dependencyManagement>
   >     <dependencies>
@@ -16,11 +17,17 @@
   >             <artifactId>excluded</artifactId>
   >           </exclusion>
   >         </exclusions>
+  >         <classifier>\${grampa.classifier}</classifier>
   >       </dependency>
   >       <dependency>
   >         <groupId>deps</groupId>
   >         <artifactId>over</artifactId>
   >         <version>1.0</version>
+  >       </dependency>
+  >       <dependency>
+  >         <groupId>deps</groupId>
+  >         <artifactId>atts</artifactId>
+  >         <version>3.0</version>
   >       </dependency>
   >       <dependency>
   >         <groupId>deps</groupId>
@@ -99,6 +106,7 @@
     child.one: yes
     child.three: 1.0
     child.two: maybe yes
+    grampa.classifier: 
     grampa.one: dunno
     grampa.three: actually maybe yes
     grampa.two: maybe yes
@@ -109,6 +117,7 @@
     project.groupId: project
     project.version: 1.0
   depmgmt:
+  - deps:atts-3.0
   - deps:atts-3.0
     classifier shared
     optional

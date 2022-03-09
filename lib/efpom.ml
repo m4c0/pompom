@@ -12,13 +12,13 @@ type t = {
   id : id;
   parent : id option;
   properties : Properties.t;
-  depmgmt : dep Depmap.t;
+  depmgmt : dep Dependency.Map.t;
 }
 
 let id_of t = t.id
 let parent_of t = t.parent
 let properties_of t = Properties.to_seq t.properties
-let depmgmt_of t = Depmap.to_seq t.depmgmt |> Seq.map (fun (_, _, v) -> v)
+let depmgmt_of t = Dependency.Map.to_seq t.depmgmt |> Seq.map (fun (_, v) -> v)
 
 let id_of_parsed (p : Parser.t) parent =
   match parent with
@@ -44,11 +44,13 @@ let depmgmt_of_parsed (p : Parser.t) (parent : t option) =
     }
   in
   let pdm =
-    match parent with None -> Depmap.Map.empty | Some pp -> pp.depmgmt
+    match parent with None -> Dependency.Map.empty | Some pp -> pp.depmgmt
   in
+  let mfn _ a b = match b with None -> a | _ -> b in
   p.dep_mgmt
-  |> Seq.map Dependency.ga_pair_of
-  |> Depmap.Map.of_seq |> Depmap.Map.map fn |> Depmap.merge_right pdm
+  |> Seq.map Dependency.unique_key
+  |> Dependency.Map.of_seq |> Dependency.Map.map fn
+  |> Dependency.Map.merge mfn pdm
 
 let merged_props props (parent : t option) =
   let p0 = Properties.of_seq props in
@@ -62,7 +64,12 @@ let resolve_id (props : Properties.t) ((g, a, v) : id) =
 
 let resolve_depmap (props : Properties.t) (dm : dep) =
   let id = resolve_id props dm.id in
-  { dm with id }
+  let classifier =
+    match Option.map (Properties.apply props) dm.classifier with
+    | Some "" -> None
+    | x -> x
+  in
+  { dm with id; classifier }
 
 let rec inheritor fname : t =
   let p = Parser.parse_file fname in
@@ -82,7 +89,7 @@ let from_pom fname : t =
     |> Properties.merge_right i.properties
     |> Properties.resolve
   in
-  let depmgmt = Depmap.Map.map (resolve_depmap properties) i.depmgmt in
+  let depmgmt = Dependency.Map.map (resolve_depmap properties) i.depmgmt in
   { i with properties; depmgmt }
 
 let from_java fname = Repo.pom_of_java fname |> from_pom
