@@ -54,6 +54,15 @@ let resolve_depmap (props : Properties.t) (dm : dep) =
   in
   { dm with id; classifier }
 
+let normalise_dep props (d : Dependency.t) =
+  let scope = Option.value ~default:"compile" d.scope |> Option.some in
+  let classifier =
+    match Option.map (Properties.apply props) d.classifier with
+    | Some "" -> None
+    | x -> x
+  in
+  { d with scope; classifier }
+
 let rec from_pom fname : t =
   let i = Inheritor.parse fname in
 
@@ -86,7 +95,10 @@ let rec from_pom fname : t =
     Dependency.Map.find_opt k depmgmt
     |> Option.map (fun ({ id = _, _, v; _ } : dep) -> v)
   in
-  let deps = depmap_from_seq dmfn i.deps in
+  let deps = 
+    Seq.map (normalise_dep properties) i.deps
+    |> depmap_from_seq dmfn 
+  in
 
   { id = i.id; parent = i.parent; properties; depmgmt; deps }
 

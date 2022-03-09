@@ -28,7 +28,6 @@
   >             <artifactId>excluded</artifactId>
   >           </exclusion>
   >         </exclusions>
-  >         <classifier>\${grampa.classifier}</classifier>
   >       </dependency>
   >       <dependency>
   >         <groupId>deps</groupId>
@@ -50,6 +49,13 @@
   >       </dependency>
   >     </dependencies>
   >   </dependencyManagement>
+  >   <dependencies>
+  >     <dependency>
+  >       <groupId>deps</groupId>
+  >       <artifactId>grampa</artifactId>
+  >       <classifier>\${grampa.classifier}</classifier>
+  >     </dependency>
+  >   </dependencies>
   > EOF
 
   $ ./xml.exe project parent 1.0 <<EOF
@@ -77,6 +83,12 @@
   >       </dependency>
   >     </dependencies>
   >   </dependencyManagement>
+  >   <dependencies>
+  >     <dependency>
+  >       <groupId>deps</groupId>
+  >       <artifactId>parent</artifactId>
+  >     </dependency>
+  >   </dependencies>
   > EOF
 
   $ cat > pom.xml <<EOF
@@ -123,6 +135,7 @@
   >     <dependency>
   >       <groupId>deps</groupId>
   >       <artifactId>over</artifactId>
+  >       <scope>test</scope>
   >     </dependency>
   >     <dependency>
   >       <groupId>deps</groupId>
@@ -165,5 +178,13 @@
   - deps:parent-1.0
   dependencies:
   - deps:child-1.0
+    scope compile
+  - deps:grampa-1.0
+    excludes deps:excluded
+    scope compile
   - deps:over-1.2
+    scope test
+  - deps:parent-1.0
+    scope compile
   - deps:unrelated-9.2
+    scope compile
