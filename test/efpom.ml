@@ -18,6 +18,7 @@ let print_depmgmt (d : Efpom.dep) =
   Seq.iter print_excl d.exclusions;
   Option.iter (Printf.printf "  classifier %s\n") d.classifier;
   if d.optional then print_endline "  optional";
+  Option.iter (Printf.printf "  scope %s\n") d.scope;
   Option.iter (Printf.printf "  type %s\n") d.tp
 
 let () =
@@ -27,4 +28,6 @@ let () =
   print_endline "properties:";
   Seq.iter print_prop (Efpom.properties_of pom);
   print_endline "depmgmt:";
-  Seq.iter print_depmgmt (Efpom.depmgmt_of pom)
+  Seq.iter print_depmgmt (Efpom.depmgmt_of pom);
+  print_endline "dependencies:";
+  Seq.iter print_depmgmt (Efpom.dependencies_of pom)

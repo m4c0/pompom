@@ -42,6 +42,7 @@ let version_of (tt : t) =
 
 let id_of (tt : t) = (tt.ga.group, tt.ga.artifact, version_of tt)
 let classifier_of (tt : t) = tt.classifier
+let scope_of (tt : t) = tt.scope
 let tp_of (tt : t) = tt.tp
 let is_optional (tt : t) = Option.value ~default:false tt.optional
 

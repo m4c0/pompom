@@ -5,6 +5,7 @@ type dep = {
   exclusions : (string * string) Seq.t;
   classifier : string option;
   optional : bool;
+  scope : string option;
   tp : string option;
   is_bom : bool;
 }
@@ -14,12 +15,14 @@ type t = {
   parent : id option;
   properties : Properties.t;
   depmgmt : dep Dependency.Map.t;
+  dependencies: dep Dependency.Map.t;
 }
 
 let id_of t = t.id
 let parent_of t = t.parent
 let properties_of t = Properties.to_seq t.properties
 let depmgmt_of t = Dependency.Map.to_seq t.depmgmt |> Seq.map (fun (_, v) -> v)
+let dependencies_of t = Dependency.Map.to_seq t.dependencies |> Seq.map (fun (_, v) -> v)
 
 let id_of_parsed (p : Parser.t) parent =
   match parent with
@@ -41,6 +44,7 @@ let depmgmt_of_parsed (p : Parser.t) (parent : t option) =
       id = Dependency.id_of d;
       exclusions = Dependency.exclusions_of d;
       optional = Dependency.is_optional d;
+      scope = Dependency.scope_of d;
       tp = Dependency.tp_of d;
       is_bom = Dependency.is_bom d;
     }
@@ -83,7 +87,8 @@ let rec inheritor fname : t =
   let properties = merged_props p.props parent_p in
 
   let depmgmt = depmgmt_of_parsed p parent_p in
-  { id; parent; properties; depmgmt }
+  let dependencies = Dependency.Map.empty in
+  { id; parent; properties; depmgmt; dependencies }
 
 let rec from_pom fname : t =
   let i = inheritor fname in

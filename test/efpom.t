@@ -148,3 +148,4 @@
   - deps:included-1.4
   - deps:over-1.2
   - deps:parent-1.0
+  dependencies:
