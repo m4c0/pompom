@@ -20,4 +20,4 @@ let () =
   print_id_lbl "id" (Efpom.id_of pom);
   Option.iter (print_id_lbl "parent") (Efpom.parent_of pom);
   print_endline "properties:";
-  Seq.iter (print_prop) (Efpom.properties_of pom);
+  Seq.iter print_prop (Efpom.properties_of pom)

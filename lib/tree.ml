@@ -130,5 +130,12 @@ let rec really_build_tree (ctx : t ctx) (fname : string) : t =
 
 let build_tree (scope : Scopes.t) (fname : string) : t =
   let cache = Tree_cache.empty () in
-  let ctx = { scope; cache; dep_mgmt = Seq.empty; props = Seq.empty |> Properties.of_seq } in
+  let ctx =
+    {
+      scope;
+      cache;
+      dep_mgmt = Seq.empty;
+      props = Seq.empty |> Properties.of_seq;
+    }
+  in
   really_build_tree ctx fname

@@ -14,4 +14,3 @@ let has_scope (s : Scopes.t) (tt : t) = Scopes.matches s tt.scope
 
 let filename_of (ext : string) (tt : t) : string =
   Repo.asset_fname ext tt.ga.group tt.ga.artifact (Option.get tt.version)
-
