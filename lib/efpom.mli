@@ -5,6 +5,7 @@ type dep = {
   classifier : string option;
   optional : bool;
   tp : string option;
+  is_bom : bool;
 }
 type t
 

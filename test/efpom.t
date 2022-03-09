@@ -1,3 +1,14 @@
+  $ ./xml.exe deps bom 1.3 <<EOF
+  >   <dependencyManagement>
+  >     <dependencies>
+  >       <dependency>
+  >         <groupId>deps</groupId>
+  >         <artifactId>included</artifactId>
+  >         <version>1.4</version>
+  >       </dependency>
+  >     </dependencies>
+  >   </dependencyManagement>
+
   $ ./xml.exe project grampa 2.2 <<EOF
   >   <properties>
   >     <grampa.one>dunno</grampa.one>
@@ -81,6 +92,7 @@
   >     <child.two>maybe \${child.one}</child.two>
   >     <child.three>\${project.version}</child.three>
   >     <child.four>\${something.invalid}</child.four>
+  >     <dep.bom.ver>1.3</dep.bom.ver>
   >   </properties>
   >   <dependencyManagement>
   >     <dependencies>
@@ -94,6 +106,13 @@
   >         <artifactId>over</artifactId>
   >         <version>1.2</version>
   >       </dependency>
+  >       <dependency>
+  >         <groupId>deps</groupId>
+  >         <artifactId>bom</artifactId>
+  >         <version>\${dep.bom.ver}</version>
+  >         <scope>import</scope>
+  >         <type>pom</type>
+  >       </dependency>
   >     </dependencies>
   >   </dependencyManagement>
   > </project>
@@ -106,6 +125,7 @@
     child.one: yes
     child.three: 1.0
     child.two: maybe yes
+    dep.bom.ver: 1.3
     grampa.classifier: 
     grampa.one: dunno
     grampa.three: actually maybe yes
@@ -125,5 +145,6 @@
   - deps:child-1.0
   - deps:grampa-1.0
     excludes deps:excluded
+  - deps:included-1.4
   - deps:over-1.2
   - deps:parent-1.0

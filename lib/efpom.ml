@@ -6,6 +6,7 @@ type dep = {
   classifier : string option;
   optional : bool;
   tp : string option;
+  is_bom : bool;
 }
 
 type t = {
@@ -41,6 +42,7 @@ let depmgmt_of_parsed (p : Parser.t) (parent : t option) =
       exclusions = Dependency.exclusions_of d;
       optional = Dependency.is_optional d;
       tp = Dependency.tp_of d;
+      is_bom = Dependency.is_bom d;
     }
   in
   let pdm =
@@ -79,17 +81,34 @@ let rec inheritor fname : t =
   in
   let id = id_of_parsed p parent in
   let properties = merged_props p.props parent_p in
+
   let depmgmt = depmgmt_of_parsed p parent_p in
   { id; parent; properties; depmgmt }
 
-let from_pom fname : t =
+let rec from_pom fname : t =
   let i = inheritor fname in
   let properties =
     Properties.of_id i.id
     |> Properties.merge_right i.properties
     |> Properties.resolve
   in
-  let depmgmt = Dependency.Map.map (resolve_depmap properties) i.depmgmt in
+  let all_dm =
+    Dependency.Map.map (resolve_depmap properties) i.depmgmt
+    |> Dependency.Map.to_seq
+  in
+  let read_bom (_, ({ id = g, a, v; _ } : dep)) =
+    let p = Repo.asset_fname "pom" g a v |> from_pom in
+    Dependency.Map.to_seq p.depmgmt
+  in
+
+  let non_bom =
+    Seq.filter_map (fun (k, d) -> if d.is_bom then None else Some (k, d)) all_dm
+  in
+  let bom =
+    Seq.filter_map (fun (k, d) -> if d.is_bom then Some (k, d) else None) all_dm
+    |> Seq.flat_map read_bom
+  in
+  let depmgmt = Seq.append bom non_bom |> Dependency.Map.of_seq in
   { i with properties; depmgmt }
 
 let from_java fname = Repo.pom_of_java fname |> from_pom
