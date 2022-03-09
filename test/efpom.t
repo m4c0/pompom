@@ -118,6 +118,14 @@
   >   <dependencies>
   >     <dependency>
   >       <groupId>deps</groupId>
+  >       <artifactId>child</artifactId>
+  >     </dependency>
+  >     <dependency>
+  >       <groupId>deps</groupId>
+  >       <artifactId>over</artifactId>
+  >     </dependency>
+  >     <dependency>
+  >       <groupId>deps</groupId>
   >       <artifactId>unrelated</artifactId>
   >       <version>9.2</version>
   >     </dependency>
@@ -156,4 +164,6 @@
   - deps:over-1.2
   - deps:parent-1.0
   dependencies:
+  - deps:child-1.0
+  - deps:over-1.2
   - deps:unrelated-9.2

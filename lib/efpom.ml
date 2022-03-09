@@ -37,10 +37,10 @@ let id_of_parsed (p : Parser.t) parent =
       let v = Option.get p.id.version in
       (g, p.id.artifact, v)
 
-let dep_of_parsed (d : Dependency.t) : dep =
+let dep_of_parsed dmfn (d : Dependency.t) : dep =
   {
     classifier = Dependency.classifier_of d;
-    id = Dependency.id_of d;
+    id = Dependency.id_of dmfn d;
     exclusions = Dependency.exclusions_of d;
     optional = Dependency.is_optional d;
     scope = Dependency.scope_of d;
@@ -48,13 +48,13 @@ let dep_of_parsed (d : Dependency.t) : dep =
     is_bom = Dependency.is_bom d;
   }
 
-let depmap_from_seq ps parent =
+let depmap_from_seq dm ps parent =
   let pdm = match parent with None -> Dependency.Map.empty | Some pp -> pp in
   let mfn _ a b = match b with None -> a | _ -> b in
   ps
   |> Seq.map Dependency.unique_key
   |> Dependency.Map.of_seq
-  |> Dependency.Map.map dep_of_parsed
+  |> Dependency.Map.map (dep_of_parsed dm)
   |> Dependency.Map.merge mfn pdm
 
 let merged_props props (parent : t option) =
@@ -86,9 +86,16 @@ let rec inheritor fname : t =
   let properties = merged_props p.props parent_p in
 
   let depmgmt =
-    Option.map (fun p -> p.depmgmt) parent_p |> depmap_from_seq p.dep_mgmt
+    Option.map (fun p -> p.depmgmt) parent_p
+    |> depmap_from_seq (fun _ -> None) p.dep_mgmt
   in
-  let deps = Option.map (fun p -> p.deps) parent_p |> depmap_from_seq p.deps in
+  let dmfn k =
+    Dependency.Map.find_opt k depmgmt
+    |> Option.map (fun ({ id = _, _, v; _ } : dep) -> v)
+  in
+  let deps =
+    Option.map (fun p -> p.deps) parent_p |> depmap_from_seq dmfn p.deps
+  in
   { id; parent; properties; depmgmt; deps }
 
 let rec from_pom fname : t =

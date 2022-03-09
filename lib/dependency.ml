@@ -35,12 +35,20 @@ let has_scope (s : Scopes.t) (tt : t) = Scopes.matches s tt.scope
 let unique_key (tt : t) =
   ((tt.ga.group, tt.ga.artifact, tt.tp, tt.classifier), tt)
 
-let version_of (tt : t) =
-  match tt.version with
-  | None -> failwith (tt.ga.group ^ ":" ^ tt.ga.artifact ^ " - missing version")
-  | Some v -> v
+let id_of vfn (tt : t) =
+  let v : string =
+    match tt.version with
+    | None -> (
+        let k, _ = unique_key tt in
+        match vfn k with
+        | None ->
+            tt.ga.group ^ ":" ^ tt.ga.artifact ^ " - missing version"
+            |> failwith
+        | Some d -> d)
+    | Some v -> v
+  in
+  (tt.ga.group, tt.ga.artifact, v)
 
-let id_of (tt : t) = (tt.ga.group, tt.ga.artifact, version_of tt)
 let classifier_of (tt : t) = tt.classifier
 let scope_of (tt : t) = tt.scope
 let tp_of (tt : t) = tt.tp
