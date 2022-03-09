@@ -1,10 +1,17 @@
 type id = string * string * string
-type t = { id : id; parent : id option; properties : Properties.t; depmgmt : Depmgmt.t }
+type dep = { id : id }
+
+type t = {
+  id : id;
+  parent : id option;
+  properties : Properties.t;
+  depmgmt : dep Depmap.t;
+}
 
 let id_of t = t.id
 let parent_of t = t.parent
 let properties_of t = Properties.to_seq t.properties
-let depmgmt_of t = Depmgmt.to_seq t.depmgmt
+let depmgmt_of t = Depmap.to_seq t.depmgmt |> Seq.map (fun (_, _, v) -> v)
 
 let id_of_parsed (p : Parser.t) parent =
   match parent with
@@ -18,6 +25,12 @@ let id_of_parsed (p : Parser.t) parent =
       let g = Option.get p.id.group in
       let v = Option.get p.id.version in
       (g, p.id.artifact, v)
+
+let depmgmt_of_parsed (p : Parser.t) =
+  let fn (d : Dependency.t) : dep = { id = Dependency.id_of d } in
+  p.dep_mgmt
+  |> Seq.map Dependency.ga_pair_of
+  |> Depmap.of_seq |> Depmap.Map.map fn
 
 let merged_props props (parent : t option) =
   let p0 = Properties.of_seq props in
@@ -33,7 +46,7 @@ let rec inheritor fname : t =
   in
   let id = id_of_parsed p parent in
   let properties = merged_props p.props parent_p in
-  let depmgmt = Depmgmt.of_dep_seq Seq.empty in
+  let depmgmt = depmgmt_of_parsed p in
   { id; parent; properties; depmgmt }
 
 let from_pom fname : t =

@@ -4,6 +4,20 @@
   >     <grampa.two>maybe \${child.one}</grampa.two>
   >     <grampa.three>actually \${parent.two}</grampa.three>
   >   </properties>
+  >   <dependencyManagement>
+  >     <dependencies>
+  >       <dependency>
+  >         <groupId>deps</groupId>
+  >         <artifactId>grampa</artifactId>
+  >         <version>1.0</version>
+  >       </dependency>
+  >       <dependency>
+  >         <groupId>deps</groupId>
+  >         <artifactId>over</artifactId>
+  >         <version>1.0</version>
+  >       </dependency>
+  >     </dependencies>
+  >   </dependencyManagement>
   > EOF
 
   $ ./xml.exe project parent 1.0 <<EOF
@@ -17,6 +31,20 @@
   >     <parent.two>maybe \${child.one}</parent.two>
   >     <parent.three>actually \${parent.two}</parent.three>
   >   </properties>
+  >   <dependencyManagement>
+  >     <dependencies>
+  >       <dependency>
+  >         <groupId>deps</groupId>
+  >         <artifactId>parent</artifactId>
+  >         <version>1.0</version>
+  >       </dependency>
+  >       <dependency>
+  >         <groupId>deps</groupId>
+  >         <artifactId>over</artifactId>
+  >         <version>1.1</version>
+  >       </dependency>
+  >     </dependencies>
+  >   </dependencyManagement>
   > EOF
 
   $ cat > pom.xml <<EOF
@@ -33,6 +61,20 @@
   >     <child.three>\${project.version}</child.three>
   >     <child.four>\${something.invalid}</child.four>
   >   </properties>
+  >   <dependencyManagement>
+  >     <dependencies>
+  >       <dependency>
+  >         <groupId>deps</groupId>
+  >         <artifactId>child</artifactId>
+  >         <version>1.0</version>
+  >       </dependency>
+  >       <dependency>
+  >         <groupId>deps</groupId>
+  >         <artifactId>over</artifactId>
+  >         <version>1.2</version>
+  >       </dependency>
+  >     </dependencies>
+  >   </dependencyManagement>
   > </project>
 
   $ ./efpom.exe src/main/java/Test.java
@@ -53,3 +95,7 @@
     project.groupId: project
     project.version: 1.0
   depmgmt:
+  - deps:child-1.0
+  - deps:grampa-1.0
+  - deps:over-1.2
+  - deps:parent-1.0

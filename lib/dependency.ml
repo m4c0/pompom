@@ -11,6 +11,13 @@ type t = {
 
 let is_bom (tt : t) = tt.scope = Some "import" && tt.tp = Some "pom"
 let has_scope (s : Scopes.t) (tt : t) = Scopes.matches s tt.scope
+let ga_pair_of (tt : t) = (tt.ga.group, tt.ga.artifact, tt)
+
+let version_of (tt : t) =
+  match tt.version with
+  | None -> failwith (tt.ga.group ^ ":" ^ tt.ga.artifact ^ " - missing version")
+  | Some v -> v
+let id_of (tt : t) = (tt.ga.group, tt.ga.artifact, version_of tt)
 
 let filename_of (ext : string) (tt : t) : string =
   Repo.asset_fname ext tt.ga.group tt.ga.artifact (Option.get tt.version)

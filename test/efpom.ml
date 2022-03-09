@@ -15,8 +15,10 @@ let print_prop (k, v) =
   print_string v;
   print_newline ()
 
-  let print_depmgmt _ =
-    print_string "- "
+let print_depmgmt (d : Efpom.dep) =
+  print_string "- ";
+  print_id d.id;
+  print_newline ()
 
 let () =
   let pom = Efpom.from_java (Array.get Sys.argv 1) in
