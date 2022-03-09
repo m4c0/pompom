@@ -3,6 +3,7 @@ type ga = { group : string; artifact : string }
 type t = {
   ga : ga;
   version : string option;
+  classifier : string option;
   scope : string option;
   tp : string option;
   exclusions : ga Seq.t;
@@ -18,6 +19,9 @@ let version_of (tt : t) =
   | None -> failwith (tt.ga.group ^ ":" ^ tt.ga.artifact ^ " - missing version")
   | Some v -> v
 let id_of (tt : t) = (tt.ga.group, tt.ga.artifact, version_of tt)
+let classifier_of (tt : t) = tt.classifier
+let tp_of (tt : t) = tt.tp
+let is_optional (tt : t) = Option.value ~default:false tt.optional
 let exclusions_of (tt : t) = Seq.map (fun { group; artifact } -> (group, artifact)) tt.exclusions
 
 let filename_of (ext : string) (tt : t) : string =

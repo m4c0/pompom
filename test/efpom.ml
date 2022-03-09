@@ -15,7 +15,10 @@ let print_depmgmt (d : Efpom.dep) =
   print_string "- ";
   print_id d.id;
   print_newline ();
-  Seq.iter print_excl d.exclusions
+  Seq.iter print_excl d.exclusions;
+  Option.iter (Printf.printf "  classifier %s\n") d.classifier;
+  if d.optional then print_endline "  optional";
+  Option.iter (Printf.printf "  type %s\n") d.tp
 
 let () =
   let pom = Efpom.from_java (Array.get Sys.argv 1) in

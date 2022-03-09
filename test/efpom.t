@@ -22,6 +22,14 @@
   >         <artifactId>over</artifactId>
   >         <version>1.0</version>
   >       </dependency>
+  >       <dependency>
+  >         <groupId>deps</groupId>
+  >         <artifactId>atts</artifactId>
+  >         <version>3.0</version>
+  >         <type>test-jar</type>
+  >         <classifier>shared</classifier>
+  >         <optional>true</optional>
+  >       </dependency>
   >     </dependencies>
   >   </dependencyManagement>
   > EOF
@@ -101,6 +109,10 @@
     project.groupId: project
     project.version: 1.0
   depmgmt:
+  - deps:atts-3.0
+    classifier shared
+    optional
+    type test-jar
   - deps:child-1.0
   - deps:grampa-1.0
     excludes deps:excluded

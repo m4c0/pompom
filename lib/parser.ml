@@ -51,10 +51,11 @@ let dep_of : Xmelly.t -> Dependency.t = function
       let scope = find_text "scope" l in
       let tp = find_text "type" l in
       let exclusions = findmap_all_elements excl_of "exclusions" l in
+      let classifier = find_text "classifier" l in
       let optional =
         find_text "optional" l |> Option.map (String.equal "true")
       in
-      { ga; version; scope; exclusions; tp; optional }
+      { ga; version; scope; classifier; exclusions; tp; optional }
   | _ -> failwith "found weird stuff inside dependencies"
 
 let prop_of : Xmelly.t -> prop = function

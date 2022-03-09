@@ -1,5 +1,12 @@
 type id = string * string * string
-type dep = { id : id; exclusions : (string * string) Seq.t }
+
+type dep = {
+  id : id;
+  exclusions : (string * string) Seq.t;
+  classifier : string option;
+  optional : bool;
+  tp : string option;
+}
 
 type t = {
   id : id;
@@ -28,9 +35,13 @@ let id_of_parsed (p : Parser.t) parent =
 
 let depmgmt_of_parsed (p : Parser.t) (parent : t option) =
   let fn (d : Dependency.t) : dep =
-    let id = Dependency.id_of d in
-    let exclusions = Dependency.exclusions_of d in
-    { id; exclusions }
+    {
+      classifier = Dependency.classifier_of d;
+      id = Dependency.id_of d;
+      exclusions = Dependency.exclusions_of d;
+      optional = Dependency.is_optional d;
+      tp = Dependency.tp_of d;
+    }
   in
   let pdm =
     match parent with None -> Depmap.Map.empty | Some pp -> pp.depmgmt
