@@ -41,6 +41,13 @@ let merged_props props (parent : t option) =
   | None -> p0
   | Some pp -> Properties.merge_left p0 pp.properties
 
+let resolve_id (props : Properties.t) ((g, a, v) : id) =
+  (g, a, Properties.apply props v)
+
+let resolve_depmap (props : Properties.t) (dm : dep) =
+  let id = resolve_id props dm.id in
+  { id }
+
 let rec inheritor fname : t =
   let p = Parser.parse_file fname in
   let parent = p.parent in
@@ -59,6 +66,7 @@ let from_pom fname : t =
     |> Properties.merge_right i.properties
     |> Properties.resolve
   in
-  { i with properties }
+  let depmgmt = Depmap.Map.map (resolve_depmap properties) i.depmgmt in
+  { i with properties; depmgmt }
 
 let from_java fname = Repo.pom_of_java fname |> from_pom
