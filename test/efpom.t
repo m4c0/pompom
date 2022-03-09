@@ -115,6 +115,13 @@
   >       </dependency>
   >     </dependencies>
   >   </dependencyManagement>
+  >   <dependencies>
+  >     <dependency>
+  >       <groupId>deps</groupId>
+  >       <artifactId>unrelated</artifactId>
+  >       <version>9.2</version>
+  >     </dependency>
+  >   </dependencies>
   > </project>
 
   $ ./efpom.exe src/main/java/Test.java
@@ -149,3 +156,4 @@
   - deps:over-1.2
   - deps:parent-1.0
   dependencies:
+  - deps:unrelated-9.2

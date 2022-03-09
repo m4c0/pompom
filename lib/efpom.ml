@@ -48,12 +48,10 @@ let dep_of_parsed (d : Dependency.t) : dep =
     is_bom = Dependency.is_bom d;
   }
 
-let depmgmt_of_parsed (p : Parser.t) (parent : t option) =
-  let pdm =
-    match parent with None -> Dependency.Map.empty | Some pp -> pp.depmgmt
-  in
+let depmap_from_seq ps parent =
+  let pdm = match parent with None -> Dependency.Map.empty | Some pp -> pp in
   let mfn _ a b = match b with None -> a | _ -> b in
-  p.dep_mgmt
+  ps
   |> Seq.map Dependency.unique_key
   |> Dependency.Map.of_seq
   |> Dependency.Map.map dep_of_parsed
@@ -87,8 +85,10 @@ let rec inheritor fname : t =
   let id = id_of_parsed p parent in
   let properties = merged_props p.props parent_p in
 
-  let depmgmt = depmgmt_of_parsed p parent_p in
-  let deps = Dependency.Map.empty in
+  let depmgmt =
+    Option.map (fun p -> p.depmgmt) parent_p |> depmap_from_seq p.dep_mgmt
+  in
+  let deps = Option.map (fun p -> p.deps) parent_p |> depmap_from_seq p.deps in
   { id; parent; properties; depmgmt; deps }
 
 let rec from_pom fname : t =
