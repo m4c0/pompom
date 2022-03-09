@@ -1,5 +1,5 @@
 type id = string * string * string
-type dep = { id : id }
+type dep = { id : id; exclusions : (string * string) Seq.t }
 
 type t = {
   id : id;
@@ -27,7 +27,11 @@ let id_of_parsed (p : Parser.t) parent =
       (g, p.id.artifact, v)
 
 let depmgmt_of_parsed (p : Parser.t) (parent : t option) =
-  let fn (d : Dependency.t) : dep = { id = Dependency.id_of d } in
+  let fn (d : Dependency.t) : dep =
+    let id = Dependency.id_of d in
+    let exclusions = Dependency.exclusions_of d in
+    { id; exclusions }
+  in
   let pdm =
     match parent with None -> Depmap.Map.empty | Some pp -> pp.depmgmt
   in
@@ -42,11 +46,12 @@ let merged_props props (parent : t option) =
   | Some pp -> Properties.merge_left p0 pp.properties
 
 let resolve_id (props : Properties.t) ((g, a, v) : id) =
-  (g, a, Properties.apply props v)
+  let apply = Properties.apply props in
+  (apply g, apply a, apply v)
 
 let resolve_depmap (props : Properties.t) (dm : dep) =
   let id = resolve_id props dm.id in
-  { id }
+  { dm with id }
 
 let rec inheritor fname : t =
   let p = Parser.parse_file fname in

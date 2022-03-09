@@ -18,6 +18,7 @@ let version_of (tt : t) =
   | None -> failwith (tt.ga.group ^ ":" ^ tt.ga.artifact ^ " - missing version")
   | Some v -> v
 let id_of (tt : t) = (tt.ga.group, tt.ga.artifact, version_of tt)
+let exclusions_of (tt : t) = Seq.map (fun { group; artifact } -> (group, artifact)) tt.exclusions
 
 let filename_of (ext : string) (tt : t) : string =
   Repo.asset_fname ext tt.ga.group tt.ga.artifact (Option.get tt.version)

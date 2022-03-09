@@ -1,5 +1,5 @@
 type id = string * string * string
-type dep = { id : id }
+type dep = { id : id; exclusions : (string * string) Seq.t }
 type t
 
 val depmgmt_of : t -> dep Seq.t

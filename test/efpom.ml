@@ -8,17 +8,14 @@ let print_id_lbl lbl id =
   print_id id;
   print_newline ()
 
-let print_prop (k, v) =
-  print_string "  ";
-  print_string k;
-  print_string ": ";
-  print_string v;
-  print_newline ()
+let print_prop (k, v) = Printf.printf "  %s: %s\n" k v
+let print_excl (g, a) = Printf.printf "  excludes %s:%s\n" g a
 
 let print_depmgmt (d : Efpom.dep) =
   print_string "- ";
   print_id d.id;
-  print_newline ()
+  print_newline ();
+  Seq.iter print_excl d.exclusions
 
 let () =
   let pom = Efpom.from_java (Array.get Sys.argv 1) in

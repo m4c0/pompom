@@ -10,6 +10,12 @@
   >         <groupId>deps</groupId>
   >         <artifactId>grampa</artifactId>
   >         <version>1.0</version>
+  >         <exclusions>
+  >           <exclusion>
+  >             <groupId>deps</groupId>
+  >             <artifactId>excluded</artifactId>
+  >           </exclusion>
+  >         </exclusions>
   >       </dependency>
   >       <dependency>
   >         <groupId>deps</groupId>
@@ -97,5 +103,6 @@
   depmgmt:
   - deps:child-1.0
   - deps:grampa-1.0
+    excludes deps:excluded
   - deps:over-1.2
   - deps:parent-1.0
