@@ -30,4 +30,4 @@ let () =
   print_endline "depmgmt:";
   Seq.iter print_depmgmt (Efpom.depmgmt_of pom);
   print_endline "dependencies:";
-  Seq.iter print_depmgmt (Efpom.dependencies_of pom)
+  Seq.iter print_depmgmt (Efpom.deps_of pom)

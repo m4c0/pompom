@@ -15,14 +15,14 @@ type t = {
   parent : id option;
   properties : Properties.t;
   depmgmt : dep Dependency.Map.t;
-  dependencies: dep Dependency.Map.t;
+  deps : dep Dependency.Map.t;
 }
 
 let id_of t = t.id
 let parent_of t = t.parent
 let properties_of t = Properties.to_seq t.properties
 let depmgmt_of t = Dependency.Map.to_seq t.depmgmt |> Seq.map (fun (_, v) -> v)
-let dependencies_of t = Dependency.Map.to_seq t.dependencies |> Seq.map (fun (_, v) -> v)
+let deps_of t = Dependency.Map.to_seq t.deps |> Seq.map (fun (_, v) -> v)
 
 let id_of_parsed (p : Parser.t) parent =
   match parent with
@@ -37,25 +37,26 @@ let id_of_parsed (p : Parser.t) parent =
       let v = Option.get p.id.version in
       (g, p.id.artifact, v)
 
+let dep_of_parsed (d : Dependency.t) : dep =
+  {
+    classifier = Dependency.classifier_of d;
+    id = Dependency.id_of d;
+    exclusions = Dependency.exclusions_of d;
+    optional = Dependency.is_optional d;
+    scope = Dependency.scope_of d;
+    tp = Dependency.tp_of d;
+    is_bom = Dependency.is_bom d;
+  }
+
 let depmgmt_of_parsed (p : Parser.t) (parent : t option) =
-  let fn (d : Dependency.t) : dep =
-    {
-      classifier = Dependency.classifier_of d;
-      id = Dependency.id_of d;
-      exclusions = Dependency.exclusions_of d;
-      optional = Dependency.is_optional d;
-      scope = Dependency.scope_of d;
-      tp = Dependency.tp_of d;
-      is_bom = Dependency.is_bom d;
-    }
-  in
   let pdm =
     match parent with None -> Dependency.Map.empty | Some pp -> pp.depmgmt
   in
   let mfn _ a b = match b with None -> a | _ -> b in
   p.dep_mgmt
   |> Seq.map Dependency.unique_key
-  |> Dependency.Map.of_seq |> Dependency.Map.map fn
+  |> Dependency.Map.of_seq
+  |> Dependency.Map.map dep_of_parsed
   |> Dependency.Map.merge mfn pdm
 
 let merged_props props (parent : t option) =
@@ -87,8 +88,8 @@ let rec inheritor fname : t =
   let properties = merged_props p.props parent_p in
 
   let depmgmt = depmgmt_of_parsed p parent_p in
-  let dependencies = Dependency.Map.empty in
-  { id; parent; properties; depmgmt; dependencies }
+  let deps = Dependency.Map.empty in
+  { id; parent; properties; depmgmt; deps }
 
 let rec from_pom fname : t =
   let i = inheritor fname in
