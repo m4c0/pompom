@@ -7,6 +7,12 @@ end)
 
 type 'a t = 'a Map.t
 
+let merge_left (a : 'x t) (b : 'x t) =
+  Map.merge (fun _ a b -> match a with None -> b | _ -> a) a b
+
+let merge_right (a : 'x t) (b : 'x t) =
+  Map.merge (fun _ a b -> match b with None -> a | _ -> b) a b
+
 let of_seq (seq : (string * string * 'a) Seq.t) =
   let fn m (g, a, v) =
     match Map.find_opt (g, a) m with Some _ -> m | None -> Map.add (g, a) v m

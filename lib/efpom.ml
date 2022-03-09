@@ -26,11 +26,14 @@ let id_of_parsed (p : Parser.t) parent =
       let v = Option.get p.id.version in
       (g, p.id.artifact, v)
 
-let depmgmt_of_parsed (p : Parser.t) =
+let depmgmt_of_parsed (p : Parser.t) (parent : t option) =
   let fn (d : Dependency.t) : dep = { id = Dependency.id_of d } in
+  let pdm =
+    match parent with None -> Depmap.Map.empty | Some pp -> pp.depmgmt
+  in
   p.dep_mgmt
   |> Seq.map Dependency.ga_pair_of
-  |> Depmap.of_seq |> Depmap.Map.map fn
+  |> Depmap.Map.of_seq |> Depmap.Map.map fn |> Depmap.merge_right pdm
 
 let merged_props props (parent : t option) =
   let p0 = Properties.of_seq props in
@@ -46,7 +49,7 @@ let rec inheritor fname : t =
   in
   let id = id_of_parsed p parent in
   let properties = merged_props p.props parent_p in
-  let depmgmt = depmgmt_of_parsed p in
+  let depmgmt = depmgmt_of_parsed p parent_p in
   { id; parent; properties; depmgmt }
 
 let from_pom fname : t =
