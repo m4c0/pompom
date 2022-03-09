@@ -10,3 +10,4 @@ let find (d : Dependency.t) (tt : t) = Depmap.find_opt d tt |> Option.to_seq
 let exclusions_of (n : node) = n.exclusions
 let version_of (n : node) = Option.to_seq n.version
 let optional_of (n : node) = Option.to_seq n.optional
+let to_seq tt = Depmap.to_seq tt |> Seq.map (fun (_, _, v) -> v)

@@ -1,9 +1,10 @@
 type id = string * string * string
-type t = { id : id; parent : id option; properties : Properties.t }
+type t = { id : id; parent : id option; properties : Properties.t; depmgmt : Depmgmt.t }
 
 let id_of t = t.id
 let parent_of t = t.parent
 let properties_of t = Properties.to_seq t.properties
+let depmgmt_of t = Depmgmt.to_seq t.depmgmt
 
 let id_of_parsed (p : Parser.t) parent =
   match parent with
@@ -32,7 +33,8 @@ let rec inheritor fname : t =
   in
   let id = id_of_parsed p parent in
   let properties = merged_props p.props parent_p in
-  { id; parent; properties }
+  let depmgmt = Depmgmt.of_dep_seq Seq.empty in
+  { id; parent; properties; depmgmt }
 
 let from_pom fname : t =
   let i = inheritor fname in

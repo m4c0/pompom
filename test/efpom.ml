@@ -15,9 +15,14 @@ let print_prop (k, v) =
   print_string v;
   print_newline ()
 
+  let print_depmgmt _ =
+    print_string "- "
+
 let () =
   let pom = Efpom.from_java (Array.get Sys.argv 1) in
   print_id_lbl "id" (Efpom.id_of pom);
   Option.iter (print_id_lbl "parent") (Efpom.parent_of pom);
   print_endline "properties:";
-  Seq.iter print_prop (Efpom.properties_of pom)
+  Seq.iter print_prop (Efpom.properties_of pom);
+  print_endline "depmgmt:";
+  Seq.iter print_depmgmt (Efpom.depmgmt_of pom)

@@ -52,3 +52,4 @@
     project.artifactId: child
     project.groupId: project
     project.version: 1.0
+  depmgmt:
