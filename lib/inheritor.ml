@@ -6,6 +6,7 @@ type t = {
   properties : Properties.t;
   depmgmt : Dependency.t Seq.t;
   deps : Dependency.t Seq.t;
+  modules : string Seq.t;
 }
 
 let id_of_parsed (p : Parser.t) parent =
@@ -42,5 +43,5 @@ let rec parse fname : t =
   let parent_deps = Option.to_seq parent_p |> Seq.flat_map (fun p -> p.deps)  in
   let deps = Seq.append parent_deps p.deps  in
 
-  { id; parent; properties; depmgmt; deps }
+  { id; parent; properties; depmgmt; deps; modules = p.modules }
 

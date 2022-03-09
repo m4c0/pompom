@@ -14,14 +14,6 @@ let merge_right (a : 'x t) (b : 'x t) =
   Map.merge (fun _ a b -> match b with None -> a | _ -> b) a b
 
 let of_seq (seq : (string * string * 'a) Seq.t) =
-  let fn m (g, a, v) =
-    match Map.find_opt (g, a) m with Some _ -> m | None -> Map.add (g, a) v m
-  in
-  Seq.fold_left fn Map.empty seq
+  Seq.map (fun (g, a, v) -> ((g, a), v)) seq |> Map.of_seq
 
 let to_seq (tt : 'a t) = Map.to_seq tt |> Seq.map (fun ((g, a), v) -> (g, a, v))
-
-let find_opt (d : Dependency.t) (tt : 'a t) =
-  Map.find_opt (d.ga.group, d.ga.artifact) tt
-
-let exists (d : Dependency.t) (tt : 'a t) = find_opt d tt |> Option.is_some

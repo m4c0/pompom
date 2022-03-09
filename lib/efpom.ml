@@ -12,6 +12,7 @@ type dep = {
 
 type t = {
   id : id;
+  modules : string Seq.t;
   parent : id option;
   properties : Properties.t;
   depmgmt : dep Dependency.Map.t;
@@ -19,6 +20,7 @@ type t = {
 }
 
 let id_of t = t.id
+let modules_of t = t.modules
 let parent_of t = t.parent
 let properties_of t = Properties.to_seq t.properties
 let depmgmt_of t = Dependency.Map.to_seq t.depmgmt |> Seq.map (fun (_, v) -> v)
@@ -61,13 +63,14 @@ let resolve_depmap (props : Properties.t) (dm : dep) =
   { dm with id; classifier }
 
 let normalise_dep props (d : Dependency.t) =
+  let version = Option.map (Properties.apply props) d.version in
   let scope = Option.value ~default:"compile" d.scope |> Option.some in
   let classifier =
     match Option.map (Properties.apply props) d.classifier with
     | Some "" -> None
     | x -> x
   in
-  { d with scope; classifier }
+  { d with version; scope; classifier }
 
 let rec from_pom fname : t =
   let i = Inheritor.parse fname in
@@ -101,6 +104,6 @@ let rec from_pom fname : t =
     Seq.map (normalise_dep properties) i.deps |> depmap_from_seq depmgmt
   in
 
-  { id = i.id; parent = i.parent; properties; depmgmt; deps }
+  { id = i.id; parent = i.parent; properties; depmgmt; deps; modules = i.modules }
 
 let from_java fname = Repo.pom_of_java fname |> from_pom
