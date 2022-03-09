@@ -8,11 +8,11 @@ let id_of t = t.id
 let deps_of t = t.deps
 let modules_of t = t.modules
 
-let resolve_deps (t : Efpom.t) =
+let rec resolve_deps (t : Efpom.t) =
   let take_id = Seq.map (fun (d : Efpom.dep) -> d.id) in
   let d = Efpom.deps_of t |> take_id in
   Seq.map (fun (g, a, v) -> Repo.asset_fname "pom" g a v) d
-  |> Seq.map Efpom.from_pom |> Seq.flat_map Efpom.deps_of |> take_id
+  |> Seq.map Efpom.from_pom |> Seq.flat_map resolve_deps
   |> Seq.append d |> Depmap.of_seq
   |> Depmap.merge_left (Depmap.of_seq d)
   |> Depmap.to_seq

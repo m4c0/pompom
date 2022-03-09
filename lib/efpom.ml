@@ -63,14 +63,18 @@ let resolve_depmap (props : Properties.t) (dm : dep) =
   { dm with id; classifier }
 
 let normalise_dep props (d : Dependency.t) =
-  let version = Option.map (Properties.apply props) d.version in
+  let apply = Properties.apply props in
+  let ga : Dependency.ga =
+    { group = apply d.ga.group; artifact = apply d.ga.artifact }
+  in
+  let version = Option.map apply d.version in
   let scope = Option.value ~default:"compile" d.scope |> Option.some in
   let classifier =
     match Option.map (Properties.apply props) d.classifier with
     | Some "" -> None
     | x -> x
   in
-  { d with version; scope; classifier }
+  { d with ga; version; scope; classifier }
 
 let rec from_pom fname : t =
   let i = Inheritor.parse fname in
@@ -104,6 +108,13 @@ let rec from_pom fname : t =
     Seq.map (normalise_dep properties) i.deps |> depmap_from_seq depmgmt
   in
 
-  { id = i.id; parent = i.parent; properties; depmgmt; deps; modules = i.modules }
+  {
+    id = i.id;
+    parent = i.parent;
+    properties;
+    depmgmt;
+    deps;
+    modules = i.modules;
+  }
 
 let from_java fname = Repo.pom_of_java fname |> from_pom
