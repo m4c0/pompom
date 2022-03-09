@@ -24,11 +24,17 @@ let properties_of t = Properties.to_seq t.properties
 let depmgmt_of t = Dependency.Map.to_seq t.depmgmt |> Seq.map (fun (_, v) -> v)
 let deps_of t = Dependency.Map.to_seq t.deps |> Seq.map (fun (_, v) -> v)
 
-let dep_of_parsed dmfn (d : Dependency.t) : dep =
+let dep_of_parsed (dm : dep Dependency.Map.t) (d : Dependency.t) : dep =
+  let dmopt = Dependency.Map.find_opt (Dependency.unique_key d) dm in
+  let dm_v = Option.map (fun ({ id = _, _, v; _ } : dep) -> v) dmopt in
+  let dm_exc =
+    Option.map (fun (d : dep) -> d.exclusions) dmopt
+    |> Option.to_seq |> Seq.concat
+  in
   {
     classifier = Dependency.classifier_of d;
-    id = Dependency.id_of dmfn d;
-    exclusions = Dependency.exclusions_of d;
+    id = Dependency.id_of dm_v d;
+    exclusions = Dependency.exclusions_of d |> Seq.append dm_exc;
     optional = Dependency.is_optional d;
     scope = Dependency.scope_of d;
     tp = Dependency.tp_of d;
@@ -37,7 +43,7 @@ let dep_of_parsed dmfn (d : Dependency.t) : dep =
 
 let depmap_from_seq dm ps =
   ps
-  |> Seq.map Dependency.unique_key
+  |> Seq.map (fun k -> (Dependency.unique_key k, k))
   |> Dependency.Map.of_seq
   |> Dependency.Map.map (dep_of_parsed dm)
 
@@ -73,7 +79,7 @@ let rec from_pom fname : t =
   in
 
   let all_dm =
-    depmap_from_seq (fun _ -> None) i.depmgmt
+    depmap_from_seq Dependency.Map.empty i.depmgmt
     |> Dependency.Map.map (resolve_depmap properties)
     |> Dependency.Map.to_seq
   in
@@ -91,13 +97,8 @@ let rec from_pom fname : t =
   in
   let depmgmt = Seq.append bom non_bom |> Dependency.Map.of_seq in
 
-  let dmfn k =
-    Dependency.Map.find_opt k depmgmt
-    |> Option.map (fun ({ id = _, _, v; _ } : dep) -> v)
-  in
-  let deps = 
-    Seq.map (normalise_dep properties) i.deps
-    |> depmap_from_seq dmfn 
+  let deps =
+    Seq.map (normalise_dep properties) i.deps |> depmap_from_seq depmgmt
   in
 
   { id = i.id; parent = i.parent; properties; depmgmt; deps }

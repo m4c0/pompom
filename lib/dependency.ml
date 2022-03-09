@@ -31,16 +31,13 @@ end)
 
 let is_bom (tt : t) = tt.scope = Some "import" && tt.tp = Some "pom"
 let has_scope (s : Scopes.t) (tt : t) = Scopes.matches s tt.scope
+let unique_key (tt : t) = (tt.ga.group, tt.ga.artifact, tt.tp, tt.classifier)
 
-let unique_key (tt : t) =
-  ((tt.ga.group, tt.ga.artifact, tt.tp, tt.classifier), tt)
-
-let id_of vfn (tt : t) =
+let id_of vopt (tt : t) =
   let v : string =
     match tt.version with
     | None -> (
-        let k, _ = unique_key tt in
-        match vfn k with
+        match vopt with
         | None ->
             tt.ga.group ^ ":" ^ tt.ga.artifact ^ " - missing version"
             |> failwith
