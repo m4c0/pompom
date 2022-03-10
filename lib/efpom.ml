@@ -117,4 +117,8 @@ let rec from_pom fname : t =
     modules = i.modules;
   }
 
+let from_dep (d : dep) =
+  let g, a, v = d.id in
+  Repo.asset_fname "pom" g a v |> from_pom
+
 let from_java fname = Repo.pom_of_java fname |> from_pom

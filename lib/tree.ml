@@ -1,23 +1,20 @@
-type t = {
-  id : string * string * string;
-  deps : (string * string * string) Seq.t;
-  modules : string Seq.t;
-}
+type t = { pom : Efpom.t; deps : t Seq.t }
 
-let id_of t = t.id
-let deps_of t = t.deps
-let modules_of t = t.modules
+let rec build_tree (scope : Scopes.t) (pom : Efpom.t) : t =
+  let is_scoped (d : Efpom.dep) = Scopes.matches scope d.scope in
+  let deps =
+    Efpom.deps_of pom |> Seq.filter is_scoped |> Seq.map Efpom.from_dep
+    |> Seq.map (build_tree scope)
+  in
+  { pom; deps }
 
-let rec resolve_deps (t : Efpom.t) =
-  let take_id = Seq.map (fun (d : Efpom.dep) -> d.id) in
-  let d = Efpom.deps_of t |> take_id in
-  Seq.map (fun (g, a, v) -> Repo.asset_fname "pom" g a v) d
-  |> Seq.map Efpom.from_pom |> Seq.flat_map resolve_deps
-  |> Seq.append d |> Depmap.of_seq
-  |> Depmap.merge_left (Depmap.of_seq d)
+let rec fold_deps (tt : t) =
+  let dd =
+    Seq.map (fun t -> t.pom) tt.deps |> Seq.map Efpom.id_of |> Depmap.of_seq
+  in
+  let dr = Seq.map fold_deps tt.deps in
+  Seq.fold_left Depmap.merge_left dd dr
+
+let resolve (scope : Scopes.t) (pom : Efpom.t) =
+  build_tree scope pom |> fold_deps
   |> Depmap.to_seq
-
-let build_tree (_ : Scopes.t) (fname : string) : t =
-  let root = Efpom.from_pom fname in
-  let deps = resolve_deps root in
-  { id = Efpom.id_of root; deps; modules = Efpom.modules_of root }
