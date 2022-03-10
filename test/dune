@@ -1,4 +1,9 @@
 (executable
+ (name deptree)
+ (libraries pompom)
+ (modules deptree))
+
+(executable
  (name efpom)
  (libraries pompom)
  (modules efpom))
@@ -18,4 +23,4 @@
    (HOME "."))))
 
 (cram
- (deps efpom.exe pomdump.exe xml.exe))
+ (deps deptree.exe efpom.exe pomdump.exe xml.exe))

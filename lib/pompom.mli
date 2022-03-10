@@ -3,6 +3,7 @@ type t
 type scope = Scopes.t
 
 module Impl_EffectivePom = Efpom
+module Impl_Tree = Tree
 
 val id_of : t -> id
 val deps_seq : t -> id Seq.t
