@@ -37,11 +37,10 @@ let rec parse fname : t =
   let id = id_of_parsed p parent in
   let properties = merged_props p.props parent_p in
 
-  let parent_dm = Option.to_seq parent_p |> Seq.flat_map (fun p -> p.depmgmt)  in
-  let depmgmt = Seq.append parent_dm p.dep_mgmt  in
-  
-  let parent_deps = Option.to_seq parent_p |> Seq.flat_map (fun p -> p.deps)  in
-  let deps = Seq.append parent_deps p.deps  in
+  let parent_dm = Option.to_seq parent_p |> Seq.flat_map (fun p -> p.depmgmt) in
+  let depmgmt = Seq.append parent_dm p.dep_mgmt in
+
+  let parent_deps = Option.to_seq parent_p |> Seq.flat_map (fun p -> p.deps) in
+  let deps = Seq.append parent_deps p.deps in
 
   { id; parent; properties; depmgmt; deps; modules = p.modules }
-

@@ -1,8 +1,5 @@
 type t = { pom : Efpom.t; deps : t Seq.t }
-
-type ctx = {
-  scope : Scopes.t
-}
+type ctx = { scope : Scopes.t }
 
 let rec build_tree (ctx : ctx) (pom : Efpom.t) : t =
   let is_scoped (d : Efpom.dep) = Scopes.matches ctx.scope d.scope in
@@ -21,5 +18,4 @@ let rec fold_deps (tt : t) =
 
 let resolve (scope : Scopes.t) (pom : Efpom.t) =
   let ctx = { scope } in
-  build_tree ctx pom |> fold_deps
-  |> Depmap.to_seq
+  build_tree ctx pom |> fold_deps |> Depmap.to_seq

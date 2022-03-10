@@ -1,4 +1,5 @@
 type id = string * string * string
+
 type dep = {
   id : id;
   exclusions : (string * string) Seq.t;
@@ -8,6 +9,7 @@ type dep = {
   tp : string option;
   is_bom : bool;
 }
+
 type t
 
 val depmgmt_of : t -> dep Seq.t
