@@ -15,4 +15,5 @@
  (synopsis "")
  (description "")
  (depends
+  (landmarks-ppx (and :dev (>= 1.4)))
   (xmelly (> 1.0.0))))

@@ -1,7 +1,9 @@
 (executable
  (name deptree)
- (libraries pompom)
- (modules deptree))
+ (libraries pompom landmarks)
+ (modules deptree)
+ (instrumentation
+  (backend landmarks)))
 
 (executable
  (name efpom)
