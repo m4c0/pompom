@@ -15,19 +15,19 @@ type t = {
   modules : string Seq.t;
   parent : id option;
   properties : Properties.t;
-  depmgmt : dep Dependency.Map.t;
-  deps : dep Dependency.Map.t;
+  depmgmt : dep Depmap.t;
+  deps : dep Depmap.t;
 }
 
 let id_of t = t.id
 let modules_of t = t.modules
 let parent_of t = t.parent
 let properties_of t = Properties.to_seq t.properties
-let depmgmt_of t = Dependency.Map.to_seq t.depmgmt |> Seq.map (fun (_, v) -> v)
-let deps_of t = Dependency.Map.to_seq t.deps |> Seq.map (fun (_, v) -> v)
+let depmgmt_of t = Depmap.to_seq t.depmgmt |> Seq.map (fun (_, v) -> v)
+let deps_of t = Depmap.to_seq t.deps |> Seq.map (fun (_, v) -> v)
 
-let dep_of_parsed (dm : dep Dependency.Map.t) (d : Dependency.t) : dep =
-  let dmopt = Dependency.Map.find_opt (Dependency.unique_key d) dm in
+let dep_of_parsed (dm : dep Depmap.t) (d : Dependency.t) : dep =
+  let dmopt = Depmap.find_opt (Dependency.unique_key d) dm in
   let dm_v = Option.map (fun ({ id = _, _, v; _ } : dep) -> v) dmopt in
   let dm_exc =
     Option.map (fun (d : dep) -> d.exclusions) dmopt
@@ -46,8 +46,8 @@ let dep_of_parsed (dm : dep Dependency.Map.t) (d : Dependency.t) : dep =
 let depmap_from_seq dm ps =
   ps
   |> Seq.map (fun k -> (Dependency.unique_key k, k))
-  |> Dependency.Map.of_seq
-  |> Dependency.Map.map (dep_of_parsed dm)
+  |> Depmap.of_seq
+  |> Depmap.map (dep_of_parsed dm)
 
 let resolve_id (props : Properties.t) ((g, a, v) : id) =
   let apply = Properties.apply props in
@@ -86,13 +86,13 @@ let rec from_pom fname : t =
   in
 
   let all_dm =
-    depmap_from_seq Dependency.Map.empty i.depmgmt
-    |> Dependency.Map.map (resolve_depmap properties)
-    |> Dependency.Map.to_seq
+    depmap_from_seq Depmap.empty i.depmgmt
+    |> Depmap.map (resolve_depmap properties)
+    |> Depmap.to_seq
   in
   let read_bom (_, ({ id = g, a, v; _ } : dep)) =
     let p = Repo.asset_fname "pom" g a v |> from_pom in
-    Dependency.Map.to_seq p.depmgmt
+    Depmap.to_seq p.depmgmt
   in
 
   let non_bom =
@@ -102,7 +102,7 @@ let rec from_pom fname : t =
     Seq.filter_map (fun (k, d) -> if d.is_bom then Some (k, d) else None) all_dm
     |> Seq.flat_map read_bom
   in
-  let depmgmt = Seq.append bom non_bom |> Dependency.Map.of_seq in
+  let depmgmt = Seq.append bom non_bom |> Depmap.of_seq in
 
   let deps =
     Seq.map (normalise_dep properties) i.deps |> depmap_from_seq depmgmt
