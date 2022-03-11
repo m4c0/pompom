@@ -165,26 +165,26 @@
     project.groupId: project
     project.version: 1.0
   depmgmt:
+  - deps:child-1.0
+  - deps:over-1.2
+  - deps:parent-1.0
+  - deps:grampa-1.0
+    excludes deps:excluded
   - deps:atts-3.0
   - deps:atts-3.0
     classifier shared
     optional
     type test-jar
-  - deps:child-1.0
-  - deps:grampa-1.0
-    excludes deps:excluded
   - deps:included-1.4
-  - deps:over-1.2
-  - deps:parent-1.0
   dependencies:
   - deps:child-1.0
     scope compile
-  - deps:grampa-1.0
-    excludes deps:excluded
-    scope compile
   - deps:over-1.2
     scope test
+  - deps:unrelated-9.2
+    scope compile
   - deps:parent-1.0
     scope compile
-  - deps:unrelated-9.2
+  - deps:grampa-1.0
+    excludes deps:excluded
     scope compile

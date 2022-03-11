@@ -102,7 +102,7 @@ let rec from_pom fname : t =
     Seq.filter_map (fun (k, d) -> if d.is_bom then Some (k, d) else None) all_dm
     |> Seq.flat_map read_bom
   in
-  let depmgmt = Seq.append bom non_bom |> Depmap.of_seq in
+  let depmgmt = Seq.append non_bom bom |> Depmap.of_seq in
 
   let deps =
     Seq.map (normalise_dep properties) i.deps |> depmap_from_seq depmgmt
