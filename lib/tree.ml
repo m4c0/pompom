@@ -1,21 +1,13 @@
-type t = { pom : Efpom.t; deps : t Seq.t }
-type ctx = { scope : Scopes.t }
+type t = { node : Efpom.dep; deps : t Seq.t }
 
-let rec build_tree (ctx : ctx) (pom : Efpom.t) : t =
-  let is_scoped (d : Efpom.dep) = Scopes.matches ctx.scope d.scope in
-  let deps =
-    Efpom.deps_of pom |> Seq.filter is_scoped |> Seq.map Efpom.from_dep
-    |> Seq.map (build_tree ctx)
-  in
-  { pom; deps }
+let rec build_tree (node : Efpom.dep) : t =
+  let deps = Efpom.from_dep node |> Efpom.deps_of |> Seq.map build_tree in
+  { node; deps }
 
-let rec fold_deps (tt : t) =
-  let dd =
-    Seq.map (fun t -> t.pom) tt.deps |> Seq.map Efpom.id_of |> Depmap.of_seq
-  in
-  let dr = Seq.map fold_deps tt.deps in
+let rec fold_deps (deps : t Seq.t) =
+  let dd = Seq.map (fun t -> t.node.id) deps |> Depmap.of_seq in
+  let dr = Seq.map (fun t -> t.deps) deps |> Seq.map fold_deps in
   Seq.fold_left Depmap.merge_left dd dr
 
-let resolve (scope : Scopes.t) (pom : Efpom.t) =
-  let ctx = { scope } in
-  build_tree ctx pom |> fold_deps |> Depmap.to_seq
+let resolve (pom : Efpom.t) =
+  Efpom.deps_of pom |> Seq.map build_tree |> fold_deps |> Depmap.to_seq

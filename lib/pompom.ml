@@ -12,11 +12,11 @@ let modules_seq (tt : t) : string Seq.t = tt.modules
 let asset_fname (ext : string) ((g, a, v) : id) : string =
   Repo.asset_fname ext g a v
 
-let from_pom (scope : scope) (fname : string) : t =
+let from_pom (_ : scope) (fname : string) : t =
   let pom = Efpom.from_pom fname in
   {
     id = Efpom.id_of pom;
-    deps = Tree.resolve scope pom;
+    deps = Tree.resolve pom;
     modules = Efpom.modules_of pom;
   }
 
