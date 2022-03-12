@@ -5,8 +5,8 @@ type dep = {
   exclusions : (string * string) Seq.t;
   classifier : string option;
   optional : bool;
-  scope : string option;
-  tp : string option;
+  scope : string;
+  tp : string;
   is_bom : bool;
 }
 

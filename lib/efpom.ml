@@ -5,8 +5,8 @@ type dep = {
   exclusions : (string * string) Seq.t;
   classifier : string option;
   optional : bool;
-  scope : string option;
-  tp : string option;
+  scope : string;
+  tp : string;
   is_bom : bool;
 }
 
@@ -68,13 +68,12 @@ let normalise_dep props (d : Dependency.t) =
     { group = apply d.ga.group; artifact = apply d.ga.artifact }
   in
   let version = Option.map apply d.version in
-  let scope = Option.value ~default:"compile" d.scope |> Option.some in
   let classifier =
     match Option.map (Properties.apply props) d.classifier with
     | Some "" -> None
     | x -> x
   in
-  { d with ga; version; scope; classifier }
+  { d with ga; version; classifier }
 
 let rec from_pom fname : t =
   let i = Inheritor.parse fname in

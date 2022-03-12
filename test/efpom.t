@@ -146,8 +146,8 @@
   > </project>
 
   $ ./efpom.exe src/main/java/Test.java
-  id: project:child-1.0
-  parent: project:parent-1.0
+  id: project:child:1.0
+  parent: project:parent:1.0
   properties:
     child.four: ${something.invalid}
     child.one: yes
@@ -165,26 +165,20 @@
     project.groupId: project
     project.version: 1.0
   depmgmt:
-  - deps:child-1.0
-  - deps:over-1.2
-  - deps:parent-1.0
-  - deps:grampa-1.0
+  - deps:child:1.0:jar:compile
+  - deps:over:1.2:jar:compile
+  - deps:parent:1.0:jar:compile
+  - deps:grampa:1.0:jar:compile
     excludes deps:excluded
-  - deps:atts-3.0
-  - deps:atts-3.0
+  - deps:atts:3.0:jar:compile
+  - deps:atts:3.0:test-jar:compile
     classifier shared
     optional
-    type test-jar
-  - deps:included-1.4
+  - deps:included:1.4:jar:compile
   dependencies:
-  - deps:child-1.0
-    scope compile
-  - deps:over-1.2
-    scope test
-  - deps:unrelated-9.2
-    scope compile
-  - deps:parent-1.0
-    scope compile
-  - deps:grampa-1.0
+  - deps:child:1.0:jar:compile
+  - deps:over:1.2:jar:test
+  - deps:unrelated:9.2:jar:compile
+  - deps:parent:1.0:jar:compile
+  - deps:grampa:1.0:jar:compile
     excludes deps:excluded
-    scope compile

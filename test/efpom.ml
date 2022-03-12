@@ -1,6 +1,6 @@
 module Efpom = Pompom.Impl_EffectivePom
 
-let print_id (g, a, v) = Printf.printf "%s:%s-%s" g a v
+let print_id (g, a, v) = Printf.printf "%s:%s:%s" g a v
 
 let print_id_lbl lbl id =
   print_string lbl;
@@ -14,12 +14,11 @@ let print_excl (g, a) = Printf.printf "  excludes %s:%s\n" g a
 let print_depmgmt (d : Efpom.dep) =
   print_string "- ";
   print_id d.id;
+  Printf.printf ":%s:%s" d.tp d.scope;
   print_newline ();
   Seq.iter print_excl d.exclusions;
   Option.iter (Printf.printf "  classifier %s\n") d.classifier;
-  if d.optional then print_endline "  optional";
-  Option.iter (Printf.printf "  scope %s\n") d.scope;
-  Option.iter (Printf.printf "  type %s\n") d.tp
+  if d.optional then print_endline "  optional"
 
 let () =
   let pom = Efpom.from_java (Array.get Sys.argv 1) in

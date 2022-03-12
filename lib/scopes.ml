@@ -7,9 +7,5 @@ let scope_list = function
 
 let transitive_of _ = Compile (* TODO: this might be wrong *)
 
-let matches (tt : t) (scope : string option) =
-  let scopes = scope_list tt in
-  Option.value ~default:"compile" scope
-  |> String.equal
-  |> (Fun.flip List.find_opt) scopes
-  |> Option.is_some
+let matches (tt : t) (scope : string) =
+  scope_list tt |> List.find_opt (String.equal scope) |> Option.is_some
