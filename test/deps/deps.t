@@ -1,5 +1,5 @@
-  $ ./xml.exe dep one 99
-  $ ./xml.exe dep two 98
+  $ ../xml.exe dep one 99
+  $ ../xml.exe dep two 98
   $ cat > pom.xml <<EOF
   > <?xml version="1.0"?>
   > <project>
@@ -10,7 +10,7 @@
   > </project>
   > EOF
 
-  $ ./pomdump.exe -j Test.java
+  $ ../pomdump.exe -j Test.java
   id: got:deps-0
   deps:
   modules:
@@ -36,7 +36,7 @@
   > </project>
   > EOF
 
-  $ ./pomdump.exe -j Test.java
+  $ ../pomdump.exe -j Test.java
   id: got:deps-0
   deps:
     dep:one-99

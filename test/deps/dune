@@ -1,0 +1,7 @@
+(env
+ (_
+  (env-vars
+   (HOME "."))))
+
+(cram
+ (deps ../pomdump.exe ../xml.exe))

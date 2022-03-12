@@ -1,6 +1,6 @@
-  $ ./xml.exe dep one 2.0
-  $ ./xml.exe dep two 2.1
-  $ ./xml.exe dep bom 2.0 <<EOF
+  $ ../xml.exe dep one 2.0
+  $ ../xml.exe dep two 2.1
+  $ ../xml.exe dep bom 2.0 <<EOF
   > <properties><dep.version>2.1</dep.version></properties>
   > <dependencyManagement>
   >   <dependencies>
@@ -49,7 +49,7 @@
   > </project>
   > EOF
 
-  $ ./pomdump.exe -j Test.java
+  $ ../pomdump.exe -j Test.java
   id: using:props-1.0
   deps:
     dep:one-2.0

@@ -1,4 +1,4 @@
-  $ ./xml.exe dep one 1.0 <<EOF
+  $ ../xml.exe dep one 1.0 <<EOF
   >   <dependencies>
   >     <dependency>
   >       <groupId>dep</groupId>
@@ -7,7 +7,7 @@
   >   </dependencies>
   > EOF
 
-  $ ./xml.exe project parent 1 <<EOF
+  $ ../xml.exe project parent 1 <<EOF
   >   <dependencyManagement>
   >     <dependencies>
   >       <dependency>
@@ -43,7 +43,7 @@
   > </project>
   > EOF
 
-  $ ./pomdump.exe -j Test.java
+  $ ../pomdump.exe -j Test.java
   id: project:main-1
   deps:
     dep:one-1.0

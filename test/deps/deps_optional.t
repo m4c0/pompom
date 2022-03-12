@@ -15,7 +15,7 @@
   > </project>
   > EOF
 
-  $ ./pomdump.exe -j Test.java
+  $ ../pomdump.exe -j Test.java
   id: got:deps-0
   deps:
   modules:

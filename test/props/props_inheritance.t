@@ -1,8 +1,8 @@
-  $ ./xml.exe using bom v
-  $ ./xml.exe from-child using-parent-prop v
-  $ ./xml.exe from-parent using-child-prop v
-  $ ./xml.exe from-parent using-dep-mgmt v
-  $ ./xml.exe using parent 1.0 <<EOF
+  $ ../xml.exe using bom v
+  $ ../xml.exe from-child using-parent-prop v
+  $ ../xml.exe from-parent using-child-prop v
+  $ ../xml.exe from-parent using-dep-mgmt v
+  $ ../xml.exe using parent 1.0 <<EOF
   > <properties><parent-prop>v</parent-prop></properties>
   > <dependencyManagement>
   >   <dependencies>
@@ -58,7 +58,7 @@
   > </project>
   > EOF
 
-  $ ./pomdump.exe -j Test.java
+  $ ../pomdump.exe -j Test.java
   id: using:props-1.0
   deps:
     from-child:using-parent-prop-v

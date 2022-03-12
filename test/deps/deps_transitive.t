@@ -1,5 +1,5 @@
-  $ ./xml.exe dep three 97
-  $ ./xml.exe dep two 98 <<EOF
+  $ ../xml.exe dep three 97
+  $ ../xml.exe dep two 98 <<EOF
   >   <dependencies>
   >     <dependency>
   >       <groupId>dep</groupId>
@@ -14,7 +14,7 @@
   >   </dependencies>
   > EOF
 
-  $ ./xml.exe dep one 99 <<EOF
+  $ ../xml.exe dep one 99 <<EOF
   >   <dependencies>
   >     <dependency>
   >       <groupId>dep</groupId>
@@ -40,7 +40,7 @@
   > </project>
   > EOF
 
-  $ ./pomdump.exe -j Test.java
+  $ ../pomdump.exe -j Test.java
   id: got:deps-0
   deps:
     dep:one-99
