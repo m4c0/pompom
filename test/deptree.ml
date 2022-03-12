@@ -2,7 +2,7 @@ module Efpom = Pompom.Impl_EffectivePom
 module Tree = Pompom.Impl_Tree
 
 let dump_id i (g, a, v) cl sc =
-  Printf.printf "%s%s:%s:%s:%s:%s" i g a cl v sc;
+  Printf.printf "%s%s:%s:%s:%s" i g a cl v;
   match sc with
   | "" -> print_newline ()
   | x ->

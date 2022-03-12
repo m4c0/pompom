@@ -1,3 +1,26 @@
+  $ ../xml.exe deps child 1.0
+  $ ../xml.exe deps transitive 2.0
+  $ ../xml.exe deps unrelated 9.2
+  $ ../xml.exe deps grampa 1.0 <<EOF
+  > <dependencies>
+  >   <dependency>
+  >     <groupId>deps</groupId>
+  >     <artifactId>transitive</artifactId>
+  >     <version>2.0</version>
+  >     <scope>test</scope>
+  >   </dependency>
+  > </dependencies>
+
+  $ ../xml.exe deps parent 1.0 <<EOF
+  > <dependencies>
+  >   <dependency>
+  >     <groupId>deps</groupId>
+  >     <artifactId>transitive</artifactId>
+  >     <version>2.0</version>
+  >     <scope>test</scope>
+  >   </dependency>
+  > </dependencies>
+
   $ ../xml.exe deps bom 1.3 <<EOF
   >   <dependencyManagement>
   >     <dependencies>
@@ -8,6 +31,16 @@
   >       </dependency>
   >     </dependencies>
   >   </dependencyManagement>
+
+  $ ../xml.exe deps over 1.2 <<EOF
+  > <dependencies>
+  >   <dependency>
+  >     <groupId>deps</groupId>
+  >     <artifactId>transitive</artifactId>
+  >     <version>2.0</version>
+  >     <scope>test</scope>
+  >   </dependency>
+  > </dependencies>
 
   $ ../xml.exe project grampa 2.2 <<EOF
   >   <properties>
@@ -146,9 +179,10 @@
   > </project>
 
   $ ../deptree.exe pom.xml
-  project:child:1.0
-  - deps:child:1.0:jar:compile
-  - deps:over:1.2:jar:test
-  - deps:unrelated:9.2:jar:compile
-  - deps:parent:1.0:jar:compile
-  - deps:grampa:1.0:jar:compile
+  project:child:jar:1.0
+    deps:child:jar:1.0:compile
+    deps:over:jar:1.2:test
+      deps:transitive:jar:2.0:test
+    deps:unrelated:jar:9.2:compile
+    deps:parent:jar:1.0:compile
+    deps:grampa:jar:1.0:compile
