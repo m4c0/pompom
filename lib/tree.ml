@@ -4,7 +4,8 @@ let key_of (dep : Efpom.dep) =
   let g, a, _ = dep.id in
   (g, a, dep.tp, dep.classifier)
 
-let rec build_tree (depmap : Efpom.dep Depmap.t) (node : Efpom.dep) : t * Efpom.dep Depmap.t =
+let rec build_tree (depmap : Efpom.dep Depmap.t) (node : Efpom.dep) :
+    t * Efpom.dep Depmap.t =
   let fold (accm, accl) dep =
     let key = key_of dep in
     if Depmap.find_opt key accm |> Option.is_some then (accm, accl)
@@ -13,7 +14,6 @@ let rec build_tree (depmap : Efpom.dep Depmap.t) (node : Efpom.dep) : t * Efpom.
       let m = Depmap.add key dep nm in
       (m, nt :: accl)
   in
-  let depmap = Depmap.add (key_of node) node depmap in
   let map, rdeps =
     Efpom.from_dep node |> Efpom.deps_of |> Seq.fold_left fold (depmap, [])
   in
@@ -21,7 +21,10 @@ let rec build_tree (depmap : Efpom.dep Depmap.t) (node : Efpom.dep) : t * Efpom.
   ({ node; deps }, map)
 
 let fold_deps_of fold (pom : Efpom.t) =
-  Efpom.deps_of pom |> Seq.fold_left fold Depmap.empty
+  let depmap =
+    Efpom.deps_of pom |> Seq.map (fun d -> (key_of d, d)) |> Depmap.of_seq
+  in
+  Efpom.deps_of pom |> Seq.fold_left fold depmap
 
 let resolve (pom : Efpom.t) =
   let fold acc dep =
