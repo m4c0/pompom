@@ -12,26 +12,29 @@ let rec build_tree (depmap : 'a Depmap.t) (node : Efpom.dep) : t * 'a Depmap.t =
     let g, a, _ = dep.id in
     (g, a, dep.tp, dep.classifier)
   in
-  let find_dep (d : 'a Depmap.t) (dep : Efpom.dep) =
-    let k = key_of dep in
-    Depmap.find_opt k d
+  let fold (accm, accl) dep =
+    let key = key_of dep in
+    if Depmap.find_opt key accm |> Option.is_some then (accm, accl)
+    else
+      let nt, nm = build_tree accm dep in
+      let m = Depmap.add key nt nm in
+      (m, nt :: accl)
   in
-  let only_new (dep : Efpom.dep) = find_dep depmap dep |> Option.is_none in
-  let fold acc dep =
-    let nt, nm = build_tree acc dep in
-    Depmap.add (key_of dep) nt nm
+  let map, rdeps =
+    Efpom.from_dep node |> Efpom.deps_of |> Seq.fold_left fold (depmap, [])
   in
-  let filtered = Efpom.from_dep node |> Efpom.deps_of |> Seq.filter only_new in
-  let map = Seq.fold_left fold depmap filtered in
-  let deps = Seq.map (find_dep map) filtered |> Seq.map Option.get in
+  let deps = List.rev rdeps |> List.to_seq in
   ({ node; deps }, map)
 
-let build_tree_of_pom (pom : Efpom.t) =
-  Efpom.deps_of pom |> Seq.map (build_tree Depmap.empty)
+let fold_deps_of fold (pom : Efpom.t) =
+  Efpom.deps_of pom
+  |> Seq.fold_left fold Depmap.empty
 
 let resolve (pom : Efpom.t) =
-  build_tree_of_pom pom
-  |> Seq.map (fun (_, map) -> map)
-  |> Seq.fold_left (fun _ map -> map) Depmap.empty
+  let fold acc dep =
+    let _, map = build_tree acc dep in
+    map
+  in
+  fold_deps_of fold pom
   |> Depmap.to_seq
   |> Seq.map (fun (_, (tt : t)) -> tt.node.id)

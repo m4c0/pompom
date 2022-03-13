@@ -19,7 +19,10 @@ let () =
   let fn = Array.get Sys.argv 1 in
   let pom = Efpom.from_pom fn in
   let cl = "jar" in
+  let fold acc dep =
+    let node, map = Tree.build_tree acc dep in
+    rec_dump "  " cl node;
+    map
+  in
   dump_id "" (Efpom.id_of pom) cl "";
-  Tree.build_tree_of_pom pom
-  |> Seq.map (fun (t, _) -> t)
-  |> Seq.iter (rec_dump "  " cl)
+  Tree.fold_deps_of fold pom |> ignore
