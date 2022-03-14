@@ -1,15 +1,17 @@
-type t = { node : Efpom.dep; deps : t Seq.t }
+type efdep = Efpom.dep
+type efdep_map = efdep Depmap.t
+type t = { node : efdep; deps : t Seq.t }
 
-let key_of (dep : Efpom.dep) =
+let key_of (dep : efdep) =
   let g, a, _ = dep.id in
   (g, a, dep.tp, dep.classifier)
 
-let rec build_tree (depmap : Efpom.dep Depmap.t) (node : Efpom.dep) :
-    t * Efpom.dep Depmap.t =
+let rec build_tree (depmap : efdep_map) (node : efdep) : t * efdep_map =
   let fold (accm, accl) dep =
     let key = key_of dep in
     if Depmap.find_opt key accm |> Option.is_some then (accm, accl)
     else
+      let dep = dep in
       let nt, nm = build_tree accm dep in
       let m = Depmap.add key dep nm in
       (m, nt :: accl)
@@ -32,4 +34,4 @@ let resolve (pom : Efpom.t) =
     map
   in
   fold_deps_of fold pom |> Depmap.to_seq
-  |> Seq.map (fun (_, (d : Efpom.dep)) -> d.id)
+  |> Seq.map (fun (_, (d : efdep)) -> d.id)
