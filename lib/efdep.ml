@@ -11,6 +11,7 @@ type t = {
 let classifier_of tt = tt.classifier
 let exclusions_of tt = tt.exclusions
 let filename_of { id = g, a, v; _ } = Repo.asset_fname "pom" g a v
+let has_scope s tt = Scopes.matches s tt.scope
 let id_of tt = tt.id
 let is_bom tt = tt.is_bom
 let is_optional tt = tt.optional

@@ -9,6 +9,7 @@
   >     <dependency>
   >       <groupId>dep</groupId>
   >       <artifactId>also-prunned</artifactId>
+  >       <version>6.9</version>
   >       <scope>test</scope>
   >     </dependency>
   >   </dependencies>
@@ -24,6 +25,7 @@
   >     <dependency>
   >       <groupId>dep</groupId>
   >       <artifactId>prunned-too</artifactId>
+  >       <version>6.9</version>
   >       <scope>test</scope>
   >     </dependency>
   >   </dependencies>
@@ -44,6 +46,7 @@
   >     <dependency>
   >       <groupId>dep</groupId>
   >       <artifactId>prunned</artifactId>
+  >       <version>6.9</version>
   >       <scope>test</scope>
   >     </dependency>
   >   </dependencies>
@@ -54,6 +57,6 @@
   id: group:art-1.0
   deps:
     dep:one-2.0
-    dep:two-3.0
     dep:three-4.0
+    dep:two-3.0
   modules:
