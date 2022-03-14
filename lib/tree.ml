@@ -8,6 +8,9 @@ let node_of (tt : t) = tt.node
 let map_of_seq seq =
   Seq.map (fun d -> (Efdep.unique_key_of d, d)) seq |> Depmap.of_seq
 
+let scoped_deps scope deps =
+  Efpom.deps_of deps |> Seq.filter (Efdep.has_scope scope)
+
 let rec build_tree scope (dm : efdep_map) (depmap : efdep_map) (node : efdep) :
     t * efdep_map =
   let fold (accm, accl) dep =
@@ -20,8 +23,7 @@ let rec build_tree scope (dm : efdep_map) (depmap : efdep_map) (node : efdep) :
       (m, nt :: accl)
   in
   let map, rdeps =
-    Efpom.from_dep node |> Efpom.deps_of
-    |> Seq.filter (Efdep.has_scope scope)
+    Efpom.from_dep node |> scoped_deps scope
     |> Seq.filter (Fun.negate Efdep.is_optional)
     |> Seq.fold_left fold (depmap, [])
   in
@@ -35,12 +37,8 @@ let fold_deps_of fn scope (pom : Efpom.t) =
     fn node;
     map
   in
-  let depmap =
-    Efpom.deps_of pom |> Seq.filter (Efdep.has_scope scope) |> map_of_seq
-  in
-  Efpom.deps_of pom
-  |> Seq.filter (Efdep.has_scope scope)
-  |> Seq.fold_left fold depmap
+  let depmap = scoped_deps scope pom |> map_of_seq in
+  scoped_deps scope pom |> Seq.fold_left fold depmap
 
 let iter scope fn pom = fold_deps_of fn scope pom |> ignore
 
