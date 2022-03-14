@@ -1,13 +1,7 @@
 type efdep = Efdep.t
 type efdep_map = efdep Depmap.t
 type t = { node : efdep; deps : t Seq.t }
-
-type ctx = {
-  scope : Scopes.t;
-  dm : efdep_map;
-  depmap : efdep_map;
-  excl : Exclusions.t;
-}
+type ctx = { dm : efdep_map; depmap : efdep_map; excl : Exclusions.t }
 
 let deps_of (tt : t) = tt.deps
 let node_of (tt : t) = tt.node
@@ -32,7 +26,7 @@ let rec build_tree ctx (node : efdep) : t * efdep_map =
       (m, nt :: accl)
   in
   let map, rdeps =
-    Efpom.from_dep node |> scoped_deps ctx.scope
+    Efpom.from_dep node |> scoped_deps Compile
     |> Seq.filter (Exclusions.accepts ctx.excl)
     |> Seq.filter (Fun.negate Efdep.is_optional)
     |> Seq.fold_left fold (ctx.depmap, [])
@@ -44,7 +38,7 @@ let fold_deps_of fn scope (pom : Efpom.t) =
   let dm = Efpom.depmgmt_of pom |> map_of_seq in
   let fold acc dep =
     let excl = Efdep.exclusions_of dep |> Exclusions.of_seq in
-    let ctx = { scope; dm; depmap = acc; excl } in
+    let ctx = { dm; depmap = acc; excl } in
     let node, map = build_tree ctx dep in
     fn node;
     map

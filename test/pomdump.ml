@@ -1,10 +1,12 @@
 let () =
   let java = ref "" in
+  let test_scope = ref false in
   let speclist =
     [
       ( "-j",
         Arg.Set_string java,
         "Path to a Java source. POM will be infered from that." );
+      ("-t", Arg.Set test_scope, "Uses 'test' scope instead of 'compile'.");
     ]
   in
   let anon_fn x = failwith (x ^ ": invalid option") in
@@ -31,6 +33,9 @@ let () =
     print_indent indent "modules:";
     Pompom.modules_seq p |> Seq.iter (print_indent ni)
   in
-  try Pompom.from_java Compile !java |> printobj "" with
+  try
+    Pompom.from_java (if !test_scope then Test else Compile) !java
+    |> printobj ""
+  with
   | Failure x -> print_endline ("[FAILURE] " ^ x)
   | Sys_error x -> print_endline ("[SYSERR] " ^ x)
