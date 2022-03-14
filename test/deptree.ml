@@ -10,19 +10,14 @@ let dump_id i (g, a, v) cl sc =
       print_endline x
 
 let rec rec_dump i cl (tree : Tree.t) =
-  let node = tree.node in
+  let node = Tree.node_of tree in
   dump_id i node.id cl node.scope;
-  try Seq.iter (fun d -> rec_dump (i ^ "  ") cl d) tree.deps
+  try Tree.deps_of tree |> Seq.iter (fun d -> rec_dump (i ^ "  ") cl d)
   with _ -> Printf.printf "%s  failed\n" i
 
 let () =
   let fn = Array.get Sys.argv 1 in
   let pom = Efpom.from_pom fn in
   let cl = "jar" in
-  let fold acc dep =
-    let node, map = Tree.build_tree acc dep in
-    rec_dump "  " cl node;
-    map
-  in
   dump_id "" (Efpom.id_of pom) cl "";
-  Tree.fold_deps_of fold pom |> ignore
+  Tree.iter (rec_dump "  " cl) pom

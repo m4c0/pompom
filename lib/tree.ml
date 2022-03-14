@@ -2,6 +2,9 @@ type efdep = Efpom.dep
 type efdep_map = efdep Depmap.t
 type t = { node : efdep; deps : t Seq.t }
 
+let deps_of (tt : t) = tt.deps
+let node_of (tt : t) = tt.node
+
 let key_of (dep : efdep) =
   let g, a, _ = dep.id in
   (g, a, dep.tp, dep.classifier)
@@ -27,6 +30,14 @@ let fold_deps_of fold (pom : Efpom.t) =
     Efpom.deps_of pom |> Seq.map (fun d -> (key_of d, d)) |> Depmap.of_seq
   in
   Efpom.deps_of pom |> Seq.fold_left fold depmap
+
+let iter fn pom =
+  let fold acc dep =
+    let node, map = build_tree acc dep in
+    fn node;
+    map
+  in
+  fold_deps_of fold pom |> ignore
 
 let resolve (pom : Efpom.t) =
   let fold acc dep =
