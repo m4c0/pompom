@@ -1,3 +1,4 @@
+module Efdep = Pompom.Impl_EffectiveDep
 module Efpom = Pompom.Impl_EffectivePom
 
 let print_id (g, a, v) = Printf.printf "%s:%s:%s" g a v
@@ -11,14 +12,12 @@ let print_id_lbl lbl id =
 let print_prop (k, v) = Printf.printf "  %s: %s\n" k v
 let print_excl (g, a) = Printf.printf "  excludes %s:%s\n" g a
 
-let print_depmgmt (d : Efpom.dep) =
+let print_depmgmt (d : Efdep.t) =
   print_string "- ";
-  print_id d.id;
-  Printf.printf ":%s:%s" d.tp d.scope;
-  print_newline ();
-  Seq.iter print_excl d.exclusions;
-  Option.iter (Printf.printf "  classifier %s\n") d.classifier;
-  if d.optional then print_endline "  optional"
+  Efdep.to_mvn_str d |> print_endline;
+  Efdep.exclusions_of d |> Seq.iter print_excl;
+  Efdep.classifier_of d |> Option.iter (Printf.printf "  classifier %s\n");
+  if Efdep.is_optional d then print_endline "  optional"
 
 let () =
   let pom = Efpom.from_java (Array.get Sys.argv 1) in

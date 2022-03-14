@@ -2,6 +2,7 @@ type id = string * string * string
 type t = { id : id; deps : id Seq.t; modules : string Seq.t }
 type scope = Scopes.t
 
+module Impl_EffectiveDep = Efdep
 module Impl_EffectivePom = Efpom
 module Impl_Tree = Tree
 

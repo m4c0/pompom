@@ -165,20 +165,20 @@
     project.groupId: project
     project.version: 1.0
   depmgmt:
-  - deps:child:1.0:jar:compile
-  - deps:over:1.2:jar:compile
-  - deps:parent:1.0:jar:compile
-  - deps:grampa:1.0:jar:compile
+  - deps:child:jar:1.0:compile
+  - deps:over:jar:1.2:compile
+  - deps:parent:jar:1.0:compile
+  - deps:grampa:jar:1.0:compile
     excludes deps:excluded
-  - deps:atts:3.0:jar:compile
-  - deps:atts:3.0:test-jar:compile
+  - deps:atts:jar:3.0:compile
+  - deps:atts:test-jar:3.0:compile
     classifier shared
     optional
-  - deps:included:1.4:jar:compile
+  - deps:included:jar:1.4:compile
   dependencies:
-  - deps:child:1.0:jar:compile
-  - deps:over:1.2:jar:test
-  - deps:unrelated:9.2:jar:compile
-  - deps:parent:1.0:jar:compile
-  - deps:grampa:1.0:jar:compile
+  - deps:child:jar:1.0:compile
+  - deps:over:jar:1.2:test
+  - deps:unrelated:jar:9.2:compile
+  - deps:parent:jar:1.0:compile
+  - deps:grampa:jar:1.0:compile
     excludes deps:excluded

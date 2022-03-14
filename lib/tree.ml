@@ -1,20 +1,17 @@
-type efdep = Efpom.dep
+type efdep = Efdep.t
 type efdep_map = efdep Depmap.t
 type t = { node : efdep; deps : t Seq.t }
 
 let deps_of (tt : t) = tt.deps
 let node_of (tt : t) = tt.node
 
-let key_of (dep : efdep) =
-  let g, a, _ = dep.id in
-  (g, a, dep.tp, dep.classifier)
-
-let map_of_seq seq = Seq.map (fun d -> (key_of d, d)) seq |> Depmap.of_seq
+let map_of_seq seq =
+  Seq.map (fun d -> (Efdep.unique_key_of d, d)) seq |> Depmap.of_seq
 
 let rec build_tree (dm : efdep_map) (depmap : efdep_map) (node : efdep) :
     t * efdep_map =
   let fold (accm, accl) dep =
-    let key = key_of dep in
+    let key = Efdep.unique_key_of dep in
     if Depmap.find_opt key accm |> Option.is_some then (accm, accl)
     else
       let dep = dep in
@@ -43,4 +40,4 @@ let iter fn pom = fold_deps_of fn pom |> ignore
 let resolve (pom : Efpom.t) =
   fold_deps_of (fun _ -> ()) pom
   |> Depmap.to_seq
-  |> Seq.map (fun (_, (d : efdep)) -> d.id)
+  |> Seq.map (fun (_, d) -> Efdep.id_of d)

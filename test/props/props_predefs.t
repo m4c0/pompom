@@ -28,6 +28,6 @@
   $ ../pomdump.exe -j Test.java
   id: using:props-1.0
   deps:
-    dep:other-1.0.0
     dep:props-1.0.0
+    dep:other-1.0.0
   modules:
