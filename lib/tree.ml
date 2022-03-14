@@ -9,13 +9,16 @@ let key_of (dep : efdep) =
   let g, a, _ = dep.id in
   (g, a, dep.tp, dep.classifier)
 
-let rec build_tree (depmap : efdep_map) (node : efdep) : t * efdep_map =
+let map_of_seq seq = Seq.map (fun d -> (key_of d, d)) seq |> Depmap.of_seq
+
+let rec build_tree (dm : efdep_map) (depmap : efdep_map) (node : efdep) :
+    t * efdep_map =
   let fold (accm, accl) dep =
     let key = key_of dep in
     if Depmap.find_opt key accm |> Option.is_some then (accm, accl)
     else
       let dep = dep in
-      let nt, nm = build_tree accm dep in
+      let nt, nm = build_tree dm accm dep in
       let m = Depmap.add key dep nm in
       (m, nt :: accl)
   in
@@ -25,24 +28,19 @@ let rec build_tree (depmap : efdep_map) (node : efdep) : t * efdep_map =
   let deps = List.rev rdeps |> List.to_seq in
   ({ node; deps }, map)
 
-let fold_deps_of fold (pom : Efpom.t) =
-  let depmap =
-    Efpom.deps_of pom |> Seq.map (fun d -> (key_of d, d)) |> Depmap.of_seq
-  in
-  Efpom.deps_of pom |> Seq.fold_left fold depmap
-
-let iter fn pom =
+let fold_deps_of fn (pom : Efpom.t) =
+  let dm = Efpom.depmgmt_of pom |> map_of_seq in
   let fold acc dep =
-    let node, map = build_tree acc dep in
+    let node, map = build_tree dm acc dep in
     fn node;
     map
   in
-  fold_deps_of fold pom |> ignore
+  let depmap = Efpom.deps_of pom |> map_of_seq in
+  Efpom.deps_of pom |> Seq.fold_left fold depmap
+
+let iter fn pom = fold_deps_of fn pom |> ignore
 
 let resolve (pom : Efpom.t) =
-  let fold acc dep =
-    let _, map = build_tree acc dep in
-    map
-  in
-  fold_deps_of fold pom |> Depmap.to_seq
+  fold_deps_of (fun _ -> ()) pom
+  |> Depmap.to_seq
   |> Seq.map (fun (_, (d : efdep)) -> d.id)
