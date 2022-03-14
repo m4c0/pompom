@@ -17,7 +17,7 @@ let rec build_tree scope (dm : efdep_map) (depmap : efdep_map) (node : efdep) :
     let key = Efdep.unique_key_of dep in
     if Depmap.find_opt key accm |> Option.is_some then (accm, accl)
     else
-      let dep = dep in
+      let dep = match Depmap.find_opt key dm with None -> dep | Some x -> x in
       let nt, nm = build_tree scope dm accm dep in
       let m = Depmap.add key dep nm in
       (m, nt :: accl)
