@@ -20,7 +20,9 @@ let rec build_tree (dm : efdep_map) (depmap : efdep_map) (node : efdep) :
       (m, nt :: accl)
   in
   let map, rdeps =
-    Efpom.from_dep node |> Efpom.deps_of |> Seq.fold_left fold (depmap, [])
+    Efpom.from_dep node |> Efpom.deps_of
+    |> Seq.filter (Fun.negate Efdep.is_optional)
+    |> Seq.fold_left fold (depmap, [])
   in
   let deps = List.rev rdeps |> List.to_seq in
   ({ node; deps }, map)
