@@ -1,6 +1,7 @@
 type efdep = Efdep.t
 type efdep_map = efdep Depmap.t
 type t = { node : efdep; deps : t Seq.t }
+type ctx = { scope : Scopes.t; dm : efdep_map; depmap : efdep_map }
 
 let deps_of (tt : t) = tt.deps
 let node_of (tt : t) = tt.node
@@ -11,21 +12,20 @@ let map_of_seq seq =
 let scoped_deps scope deps =
   Efpom.deps_of deps |> Seq.filter (Efdep.has_scope scope)
 
-let rec build_tree scope (dm : efdep_map) (depmap : efdep_map) (node : efdep) :
-    t * efdep_map =
+let rec build_tree ctx (node : efdep) : t * efdep_map =
   let fold (accm, accl) dep =
     let key = Efdep.unique_key_of dep in
     if Depmap.find_opt key accm |> Option.is_some then (accm, accl)
     else
-      let dep = match Depmap.find_opt key dm with None -> dep | Some x -> x in
-      let nt, nm = build_tree scope dm accm dep in
+      let dep = match Depmap.find_opt key ctx.dm with None -> dep | Some x -> x in
+      let nt, nm = build_tree { ctx with depmap = accm } dep in
       let m = Depmap.add key dep nm in
       (m, nt :: accl)
   in
   let map, rdeps =
-    Efpom.from_dep node |> scoped_deps scope
+    Efpom.from_dep node |> scoped_deps ctx.scope
     |> Seq.filter (Fun.negate Efdep.is_optional)
-    |> Seq.fold_left fold (depmap, [])
+    |> Seq.fold_left fold (ctx.depmap, [])
   in
   let deps = List.rev rdeps |> List.to_seq in
   ({ node; deps }, map)
@@ -33,7 +33,8 @@ let rec build_tree scope (dm : efdep_map) (depmap : efdep_map) (node : efdep) :
 let fold_deps_of fn scope (pom : Efpom.t) =
   let dm = Efpom.depmgmt_of pom |> map_of_seq in
   let fold acc dep =
-    let node, map = build_tree scope dm acc dep in
+    let ctx = { scope; dm; depmap = acc } in
+    let node, map = build_tree ctx dep in
     fn node;
     map
   in
