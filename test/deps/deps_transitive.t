@@ -9,6 +9,7 @@
   >     <dependency>
   >       <groupId>dep</groupId>
   >       <artifactId>non-existent</artifactId>
+  >       <version>69</version>
   >       <scope>provided</scope>
   >     </dependency>
   >   </dependencies>
@@ -44,6 +45,6 @@
   id: got:deps-0
   deps:
     dep:one-99
-    dep:two-98
     dep:three-97
+    dep:two-98
   modules:

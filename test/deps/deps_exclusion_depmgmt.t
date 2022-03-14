@@ -3,6 +3,7 @@
   >     <dependency>
   >       <groupId>dep</groupId>
   >       <artifactId>one-broken</artifactId>
+  >       <version>6.9</version>
   >     </dependency>
   >   </dependencies>
   > EOF
