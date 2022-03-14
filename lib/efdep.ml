@@ -3,7 +3,7 @@ type t = {
   exclusions : (string * string) Seq.t;
   classifier : string option;
   optional : bool;
-  scope : string;
+  scope : string option;
   tp : string;
   is_bom : bool;
 }
@@ -11,12 +11,13 @@ type t = {
 let classifier_of tt = tt.classifier
 let exclusions_of tt = tt.exclusions
 let filename_of { id = g, a, v; _ } = Repo.asset_fname "pom" g a v
-let has_scope s tt = Scopes.matches s tt.scope
 let id_of tt = tt.id
 let is_bom tt = tt.is_bom
 let is_optional tt = tt.optional
+let scope_of tt = Option.value ~default:"compile" tt.scope
 let unique_key_of { id = g, a, _; tp; classifier; _ } = (g, a, tp, classifier)
 let version_of { id = _, _, v; _ } = v
+let has_scope s tt = Scopes.matches s (scope_of tt)
 
 let apply_props props ({ id = g, a, v; _ } as tt : t) =
   let apply = Properties.apply props in
@@ -42,5 +43,15 @@ let of_parsed dm d =
     is_bom = Dependency.is_bom d;
   }
 
-let to_mvn_str { id = g, a, v; tp; scope; _ } =
-  [ g; a; tp; v; scope ] |> String.concat ":"
+let extend_with ~default tt =
+  match default with
+  | None -> tt
+  | Some { id; scope; _ } ->
+      let scope =
+        [ tt.scope; scope; Some "compile" ]
+        |> List.filter_map Fun.id |> List.hd |> Option.some
+      in
+      { tt with id; scope }
+
+let to_mvn_str ({ id = g, a, v; tp; _ } as tt) =
+  [ g; a; tp; v; scope_of tt ] |> String.concat ":"

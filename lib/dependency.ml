@@ -4,14 +4,14 @@ type t = {
   ga : ga;
   version : string option;
   classifier : string option;
-  scope : string;
+  scope : string option;
   tp : string;
   exclusions : ga Seq.t;
   optional : bool option;
 }
 
-let is_bom (tt : t) = tt.scope = "import" && tt.tp = "pom"
-let has_scope (s : Scopes.t) (tt : t) = Scopes.matches s tt.scope
+let is_bom (tt : t) = tt.scope = Some "import" && tt.tp = "pom"
+let has_scope (s : Scopes.t) (tt : t) = Option.value ~default:"compile" tt.scope |> Scopes.matches s 
 let unique_key (tt : t) = (tt.ga.group, tt.ga.artifact, tt.tp, tt.classifier)
 
 let id_of vopt (tt : t) =

@@ -3,6 +3,7 @@ type t
 val apply_props : Properties.t -> t -> t
 val classifier_of : t -> string option
 val exclusions_of : t -> (string * string) Seq.t
+val extend_with : default:t option -> t -> t
 val filename_of : t -> string
 val has_scope : Scopes.t -> t -> bool
 val id_of : t -> string * string * string

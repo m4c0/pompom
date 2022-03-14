@@ -48,7 +48,7 @@ let dep_of : Xmelly.t -> Dependency.t = function
   | Element ("dependency", _, l) ->
       let ga = ga_of "dependency" l in
       let version = find_text "version" l in
-      let scope = find_text "scope" l |> Option.value ~default:"compile" in
+      let scope = find_text "scope" l in
       let tp = find_text "type" l |> Option.value ~default:"jar" in
       let exclusions = findmap_all_elements excl_of "exclusions" l in
       let classifier = find_text "classifier" l in
