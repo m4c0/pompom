@@ -24,9 +24,11 @@ let apply_dms dms deps =
   Efpom.deps_of deps |> Seq.map apply_dm
 
 let rec build_tree ctx (node : efdep) : t * efdep_map =
+  let nkey = Efdep.unique_key_of node in
   let fold (accm, accl) dep =
     let key = Efdep.unique_key_of dep in
-    if Depmap.find_opt key accm |> Option.is_some then (accm, accl)
+    if key = nkey then (accm, accl)
+    else if Depmap.find_opt key accm |> Option.is_some then (accm, accl)
     else
       let excl = Exclusions.add_seq (Efdep.exclusions_of dep) ctx.excl in
       let nt, nm =
@@ -60,8 +62,7 @@ let fold_deps_of fn scope (pom : Efpom.t) =
     map
   in
   let depmap =
-    Efpom.deps_of pom
-     |> Seq.filter (Efdep.has_scope scope) |> map_of_seq
+    Efpom.deps_of pom |> Seq.filter (Efdep.has_scope scope) |> map_of_seq
   in
   Depmap.to_seq depmap |> Seq.map (fun (_, d) -> d) |> Seq.fold_left fold depmap
 
