@@ -117,6 +117,7 @@
   >         <groupId>deps</groupId>
   >         <artifactId>over</artifactId>
   >         <version>1.2</version>
+  >         <scope>test</scope>
   >       </dependency>
   >       <dependency>
   >         <groupId>deps</groupId>
@@ -135,7 +136,6 @@
   >     <dependency>
   >       <groupId>deps</groupId>
   >       <artifactId>over</artifactId>
-  >       <scope>test</scope>
   >     </dependency>
   >     <dependency>
   >       <groupId>deps</groupId>
@@ -166,7 +166,7 @@
     project.version: 1.0
   depmgmt:
   - deps:child:jar:1.0:compile
-  - deps:over:jar:1.2:compile
+  - deps:over:jar:1.2:test
   - deps:parent:jar:1.0:compile
   - deps:grampa:jar:1.0:compile
     excludes deps:excluded

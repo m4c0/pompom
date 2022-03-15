@@ -31,11 +31,25 @@
   >   </dependencyManagement>
 
   $ ../xml.exe deps over 1.2 <<EOF
+  > <dependencyManagement>
+  >   <dependencies>
+  >     <dependency>
+  >       <groupId>deps</groupId>
+  >       <artifactId>weird-test-dep</artifactId>
+  >       <version>6.9</version>
+  >       <scope>test</scope>
+  >     </dependency>
+  >   </dependencies>
+  > </dependencyManagement>
   > <dependencies>
   >   <dependency>
   >     <groupId>deps</groupId>
   >     <artifactId>transitive</artifactId>
   >     <version>2.0</version>
+  >   </dependency>
+  >   <dependency>
+  >     <groupId>deps</groupId>
+  >     <artifactId>weird-test-dep</artifactId>
   >   </dependency>
   > </dependencies>
 
@@ -179,7 +193,7 @@
   project:child:jar:1.0
     deps:child:jar:1.0:compile
     deps:over:jar:1.2:test
-      deps:transitive:jar:2.0:compile
+      deps:transitive:jar:2.0:test
     deps:unrelated:jar:9.2:compile
     deps:parent:jar:1.0:compile
     deps:grampa:jar:1.0:compile

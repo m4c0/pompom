@@ -1,11 +1,24 @@
+(* FIXME: "t" is actually the "resolvable scope", not the scope in POM. That's confusing *)
 type t = Compile | Test | Runtime
 
-let scope_list = function
-  | Compile -> [ "compile" ]
-  | Runtime -> [ "compile"; "provided" ]
-  | Test -> [ "compile"; "test"; "provided" ]
-
-let transitive_of _ = Compile (* TODO: this might be wrong *)
+let transitive_of set tr =
+  let s = Option.value ~default:"compile" set in
+  let t = Option.value ~default:"compile" tr in
+  match (s, t) with
+  | _, "compile" -> Some s
+  | "compile", "runtime" | "runtime", "runtime" -> Some "runtime"
+  | "provided", "runtime" -> Some "provided"
+  | "test", "runtime" -> Some "test"
+  | _, _ -> None
 
 let matches (tt : t) (scope : string) =
-  scope_list tt |> List.find_opt (String.equal scope) |> Option.is_some
+  match (tt, scope) with
+  | Compile, "compile"
+  | Test, "compile"
+  | Test, "provided"
+  | Test, "test"
+  | Runtime, "compile"
+  | Runtime, "provided"
+  | Runtime, "runtime" ->
+      true
+  | _, _ -> false

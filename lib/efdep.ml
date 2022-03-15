@@ -33,12 +33,13 @@ let of_parsed dm d =
   let dmopt = Depmap.find_opt (Dependency.unique_key d) dm in
   let dm_v = Option.map version_of dmopt in
   let dm_exc = Option.map exclusions_of dmopt |> Option.to_seq |> Seq.concat in
+  let dm_s = Option.map scope_of dmopt in
   {
     classifier = Dependency.classifier_of d;
     id = Dependency.id_of dm_v d;
     exclusions = Dependency.exclusions_of d |> Seq.append dm_exc;
     optional = Dependency.is_optional d;
-    scope = Dependency.scope_of d;
+    scope = Option.fold ~none:dm_s ~some:Option.some (Dependency.scope_of d);
     tp = Dependency.tp_of d;
     is_bom = Dependency.is_bom d;
   }
@@ -52,6 +53,10 @@ let extend_with ~default tt =
         |> List.filter_map Fun.id |> List.hd |> Option.some
       in
       { tt with id; scope }
+
+let rescope stt tt =
+  Scopes.transitive_of stt.scope tt.scope 
+  |> Option.map (fun s -> { tt with scope = Some s })
 
 let to_mvn_str ({ id = g, a, v; tp; _ } as tt) =
   [ g; a; tp; v; scope_of tt ] |> String.concat ":"
