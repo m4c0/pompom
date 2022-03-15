@@ -145,7 +145,7 @@
   >   </dependencies>
   > </project>
 
-  $ ./efpom.exe src/main/java/Test.java
+  $ ./efpom.exe pom.xml
   id: project:child:1.0
   parent: project:parent:1.0
   properties:

@@ -20,7 +20,7 @@ let print_depmgmt (d : Efdep.t) =
   if Efdep.is_optional d then print_endline "  optional"
 
 let () =
-  let pom = Efpom.from_java (Array.get Sys.argv 1) in
+  let pom = Efpom.from_pom (Array.get Sys.argv 1) in
   print_id_lbl "id" (Efpom.id_of pom);
   Option.iter (print_id_lbl "parent") (Efpom.parent_of pom);
   print_endline "properties:";
