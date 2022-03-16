@@ -11,7 +11,7 @@ bug-reports: "https://github.com/m4c0/pompom/issues"
 depends: [
   "dune" {>= "2.9"}
   "landmarks-ppx" {dev & >= "1.4"}
-  "xmelly" {> "1.0.0"}
+  "xmelly" {> "1.0.1"}
   "odoc" {with-doc}
 ]
 build: [
