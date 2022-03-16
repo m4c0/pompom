@@ -45,7 +45,8 @@ let rec try_from_pom fname : t =
   in
 
   let all_dm =
-    depmap_from_seq Depmap.empty i.depmgmt
+    Seq.map (normalise_dep properties) i.depmgmt
+    |> depmap_from_seq Depmap.empty
     |> Depmap.map (Efdep.apply_props properties)
     |> Depmap.to_seq
   in
