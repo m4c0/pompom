@@ -2,5 +2,7 @@
  (public_name pompom)
  (libraries str xmelly)
  (inline_tests)
+ (instrumentation
+  (backend landmarks))
  (preprocess
   (pps ppx_inline_test)))
