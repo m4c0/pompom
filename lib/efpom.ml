@@ -35,7 +35,7 @@ let normalise_dep props (d : Dependency.t) =
   in
   { d with ga; version; classifier }
 
-let rec from_pom fname : t =
+let rec try_from_pom fname : t =
   let i = Inheritor.parse fname in
 
   let properties =
@@ -50,7 +50,7 @@ let rec from_pom fname : t =
     |> Depmap.to_seq
   in
   let read_bom (_, d) =
-    let p = Efdep.filename_of d |> from_pom in
+    let p = Efdep.filename_of d |> try_from_pom in
     Depmap.to_seq p.depmgmt
   in
 
@@ -79,6 +79,9 @@ let rec from_pom fname : t =
     deps;
     modules = i.modules;
   }
+
+let from_pom fname : t =
+  try try_from_pom fname with Failure x -> failwith (x ^ "\nfrom " ^ fname)
 
 let from_dep (d : Efdep.t) = Efdep.filename_of d |> from_pom
 let from_java fname = Repo.pom_of_java fname |> from_pom
