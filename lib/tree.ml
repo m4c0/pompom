@@ -24,11 +24,9 @@ let apply_dms dms deps =
   Efpom.deps_of deps |> Seq.map apply_dm
 
 let rec build_tree ctx (node : efdep) : t * efdep_map =
-  let nkey = Efdep.unique_key_of node in
   let fold (accm, accl) dep =
     let key = Efdep.unique_key_of dep in
-    if key = nkey then (accm, accl)
-    else if Depmap.find_opt key accm |> Option.is_some then (accm, accl)
+    if Depmap.find_opt key accm |> Option.is_some then (accm, accl)
     else
       let excl = Exclusions.add_seq (Efdep.exclusions_of dep) ctx.excl in
       let depmap = Depmap.add key dep accm in
