@@ -88,3 +88,4 @@ let from_pom fname : t =
 
 let from_dep (d : Efdep.t) = Efdep.filename_of d |> from_pom
 let from_java fname = Repo.pom_of_java fname |> from_pom
+let from_mvn_str name = Repo.pom_of_mvn_str name |> from_pom

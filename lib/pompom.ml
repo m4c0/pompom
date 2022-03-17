@@ -22,3 +22,4 @@ let from_pom (scope : scope) (fname : string) : t =
   }
 
 let from_java (scope : scope) fname = Repo.pom_of_java fname |> from_pom scope
+let from_mvn_str (scope : scope) name = Repo.pom_of_mvn_str name |> from_pom scope

@@ -20,3 +20,8 @@ let rec pom_of_java fname =
     let next_fname = Filename.dirname fname in
     if next_fname = fname then failwith "could not find POM"
     else pom_of_java next_fname
+
+let pom_of_mvn_str name =
+  match String.split_on_char ':' name with
+  | g :: a :: _ :: v :: _ -> asset_fname "pom" g a v
+  | _ -> failwith ("invalid maven id: " ^ name)

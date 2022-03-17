@@ -10,3 +10,4 @@ val properties_of : t -> (string * string) Seq.t
 val from_dep : Efdep.t -> t
 val from_pom : string -> t
 val from_java : string -> t
+val from_mvn_str : string -> t
