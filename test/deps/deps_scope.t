@@ -57,6 +57,6 @@
   id: group:art-1.0
   deps:
     dep:one-2.0
-    dep:three-4.0
     dep:two-3.0
+    dep:three-4.0
   modules:

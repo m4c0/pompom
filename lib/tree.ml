@@ -31,8 +31,9 @@ let rec build_tree ctx (node : efdep) : t * efdep_map =
     else if Depmap.find_opt key accm |> Option.is_some then (accm, accl)
     else
       let excl = Exclusions.add_seq (Efdep.exclusions_of dep) ctx.excl in
+      let depmap = Depmap.add key dep accm in
       let nt, nm =
-        try build_tree { ctx with excl; depmap = accm } dep with
+        try build_tree { ctx with excl; depmap } dep with
         | Sys_error e ->
             let fname = Efdep.to_mvn_str node in
             let msg = Printf.sprintf "%s\nwhile traversing %s" e fname in
@@ -42,8 +43,7 @@ let rec build_tree ctx (node : efdep) : t * efdep_map =
             let msg = Printf.sprintf "%s\nwhile traversing %s" e fname in
             failwith msg
       in
-      let m = Depmap.add key dep nm in
-      (m, nt :: accl)
+      (nm, nt :: accl)
   in
   let map, rdeps =
     Efpom.from_dep node |> apply_dms ctx.dm
@@ -61,9 +61,9 @@ let fold_deps_of fn scope (pom : Efpom.t) =
   let fold acc dep =
     let excl = Efdep.exclusions_of dep |> Exclusions.of_seq in
     let ctx = { dm; depmap = acc; excl; scope } in
-    let node, map = 
+    let node, map =
       try build_tree ctx dep
-      with Failure x -> 
+      with Failure x ->
         let id = Efdep.to_mvn_str dep in
         failwith (x ^ "\nwhile fetching transitives of " ^ id)
     in
