@@ -82,7 +82,9 @@ let rec try_from_pom fname : t =
   }
 
 let from_pom fname : t =
-  try try_from_pom fname with Failure x -> failwith (x ^ "\nfrom " ^ fname)
+  try try_from_pom fname with
+  | Failure x -> failwith (x ^ "\nfrom " ^ fname)
+  | Stack_overflow -> failwith ("Stack overflow from " ^ fname)
 
 let from_dep (d : Efdep.t) = Efdep.filename_of d |> from_pom
 let from_java fname = Repo.pom_of_java fname |> from_pom

@@ -32,10 +32,10 @@ let find_text (t : string) (l : Xmelly.t list) : string option =
   in
   List.find_map fn l
 
-let get_or_fail msg = function Some x -> x | None -> failwith msg
+let get_or_fail msg = function Some x -> x | None -> failwith (msg ())
 
 let ga_of (fld : string) (l : Xmelly.t list) : Dependency.ga =
-  let find f = find_text f l |> get_or_fail (f ^ " is not set in " ^ fld) in
+  let find f = find_text f l |> get_or_fail (fun _ -> f ^ " is not set in " ^ fld) in
   let group = find "groupId" in
   let artifact = find "artifactId" in
   { group; artifact }
@@ -70,7 +70,7 @@ let module_of : Xmelly.t -> string = function
   | Text x -> failwith (x ^ ": loose text found inside modules")
 
 let parent_of (l : Xmelly.t list) : parent =
-  let find f = find_text f l |> get_or_fail (f ^ " is not set in parent") in
+  let find f = find_text f l |> get_or_fail (fun _ -> f ^ " is not set in parent") in
   let group = find "groupId" in
   let artifact = find "artifactId" in
   let version = find "version" in
@@ -79,7 +79,7 @@ let parent_of (l : Xmelly.t list) : parent =
 let project_of (l : Xmelly.t list) : t =
   let parent = findopt_element "parent" l |> Option.map parent_of in
   let group = find_text "groupId" l in
-  let artifact = find_text "artifactId" l |> get_or_fail "artifactId not set" in
+  let artifact = find_text "artifactId" l |> get_or_fail (fun _ -> "artifactId not set") in
   let version = find_text "version" l in
   let id : id = { group; artifact; version } in
   let deps = findmap_all_elements dep_of "dependencies" l in
