@@ -47,12 +47,13 @@ let of_parsed dm d =
 let extend_with ~default tt =
   match default with
   | None -> tt
-  | Some { id; scope; _ } ->
+  | Some { id; scope; exclusions; _ } ->
+      let exclusions = Seq.append tt.exclusions exclusions in
       let scope =
         [ tt.scope; scope; Some "compile" ]
         |> List.filter_map Fun.id |> List.hd |> Option.some
       in
-      { tt with id; scope }
+      { tt with id; scope; exclusions }
 
 let rescope stt tt =
   Scopes.transitive_of stt.scope tt.scope 
