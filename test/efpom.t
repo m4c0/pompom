@@ -163,6 +163,9 @@
     parent.two: maybe yes
     project.artifactId: child
     project.groupId: project
+    project.parent.artifactId: parent
+    project.parent.groupId: project
+    project.parent.version: 1.0
     project.version: 1.0
   depmgmt:
   - deps:child:jar:1.0:compile

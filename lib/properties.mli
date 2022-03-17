@@ -1,5 +1,6 @@
 type t
 
+val add_parent_id : t -> string * string * string -> t
 val apply : t -> string -> string
 val merge_left : t -> t -> t
 val merge_right : t -> t -> t

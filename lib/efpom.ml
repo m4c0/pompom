@@ -38,8 +38,9 @@ let normalise_dep props (d : Dependency.t) =
 let rec try_from_pom fname : t =
   let i = Inheritor.parse fname in
 
+  let pid = Properties.of_id i.id in
   let properties =
-    Properties.of_id i.id
+    Option.fold ~none:pid ~some:(Properties.add_parent_id pid) i.parent
     |> Properties.merge_right i.properties
     |> Properties.resolve
   in

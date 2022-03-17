@@ -28,6 +28,12 @@ let of_id (g, a, v) =
   |> PropMap.add "project.artifactId" a
   |> PropMap.add "project.version" v
 
+let add_parent_id p (g, a, v) =
+  p
+  |> PropMap.add "project.parent.groupId" g
+  |> PropMap.add "project.parent.artifactId" a
+  |> PropMap.add "project.parent.version" v
+
 let%test _ =
   let seq = List.to_seq [ ("aa", "vv"); ("bb", "${aa}") ] |> of_seq in
   let applier = of_id ("gg", "aa", "vv") |> merge_left seq |> apply in
