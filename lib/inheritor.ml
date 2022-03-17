@@ -28,7 +28,10 @@ let merged_props props (parent : t option) =
   | None -> p0
   | Some pp -> Properties.merge_left p0 pp.properties
 
-let rec parse fname : t =
+module Map = Map.Make(String)
+let cache = ref Map.empty
+
+let rec rparse fname =
   let p = Parser.parse_file fname in
   let parent = p.parent in
   let parent_p =
@@ -44,3 +47,10 @@ let rec parse fname : t =
   let deps = Seq.append p.deps parent_deps in
 
   { id; parent; properties; depmgmt; deps; modules = p.modules }
+and parse fname : t =
+  match Map.find_opt fname !cache with
+  | Some tt -> tt
+  | None ->
+      let tt = rparse fname in
+      cache := Map.add fname tt !cache;
+      tt
