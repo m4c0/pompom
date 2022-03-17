@@ -14,4 +14,4 @@ let () =
   let pom = Efpom.from_pom fn in
   let g, a, v = Efpom.id_of pom in
   Printf.printf "%s:%s:jar:%s\n" g a v;
-  Tree.iter Test (rec_dump "  ") pom
+  Tree.iter Test pom |> Seq.iter (rec_dump "  ")

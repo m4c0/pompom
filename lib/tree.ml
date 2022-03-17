@@ -1,6 +1,6 @@
 type efdep = Efdep.t
 type efdep_map = efdep Depmap.t
-type t = { node : efdep; deps : t Seq.t }
+type t = { node : efdep; deps : t Queue.t }
 
 type ctx = {
   dm : efdep_map;
@@ -9,7 +9,7 @@ type ctx = {
   scope : Scopes.t;
 }
 
-let deps_of (tt : t) = tt.deps
+let deps_of (tt : t) = Queue.to_seq tt.deps
 let node_of (tt : t) = tt.node
 
 let map_of_seq seq =
@@ -23,59 +23,47 @@ let apply_dms dms deps =
   in
   Efpom.deps_of deps |> Seq.map apply_dm
 
-let rec build_tree ctx (node : efdep) : t * efdep_map =
-  let fold (accm, accl) dep =
-    let key = Efdep.unique_key_of dep in
-    if Depmap.find_opt key accm |> Option.is_some then (accm, accl)
-    else
+let depy ctx (node : efdep) =
+  Efpom.from_dep node |> apply_dms ctx.dm
+  |> Seq.filter_map (Efdep.rescope node)
+  |> Seq.filter (Efdep.has_scope ctx.scope)
+  |> Seq.filter (Exclusions.accepts ctx.excl)
+  |> Seq.filter (Fun.negate Efdep.is_optional)
+
+let rec just_do_it ctx pending =
+  match Queue.take_opt pending with
+  | None -> ctx.depmap
+  | Some (_, x) when Depmap.exists (Efdep.unique_key_of x) ctx.depmap ->
+      just_do_it ctx pending
+  | Some (pq, dep) ->
+      let depmap = Depmap.add (Efdep.unique_key_of dep) dep ctx.depmap in
       let excl = Exclusions.add_seq (Efdep.exclusions_of dep) ctx.excl in
-      let depmap = Depmap.add key dep accm in
-      let nt, nm =
-        try build_tree { ctx with excl; depmap } dep with
-        | Sys_error e ->
-            let fname = Efdep.to_mvn_str node in
-            let msg = Printf.sprintf "%s\nwhile traversing %s" e fname in
-            Sys_error msg |> raise
-        | Failure e ->
-            let fname = Efdep.to_mvn_str node in
-            let msg = Printf.sprintf "%s\nwhile traversing %s" e fname in
-            failwith msg
-      in
-      (nm, nt :: accl)
-  in
-  let map, rdeps =
-    Efpom.from_dep node |> apply_dms ctx.dm
-    |> Seq.filter_map (Efdep.rescope node)
-    |> Seq.filter (Efdep.has_scope ctx.scope)
-    |> Seq.filter (Exclusions.accepts ctx.excl)
-    |> Seq.filter (Fun.negate Efdep.is_optional)
-    |> Seq.fold_left fold (ctx.depmap, [])
-  in
-  let deps = List.rev rdeps |> List.to_seq in
-  ({ node; deps }, map)
+      let ctx = { ctx with depmap; excl } in
+      let q = Queue.create () in
+      let tt = { node = dep; deps = q } in
+      let deps = depy ctx dep |> Seq.map (fun d -> (q, d)) in
+      Queue.add tt pq;
+      Queue.add_seq pending deps;
+      just_do_it ctx pending
 
-let fold_deps_of fn scope (pom : Efpom.t) =
+let start scope pom q =
   let dm = Efpom.depmgmt_of pom |> map_of_seq in
-  let fold acc dep =
-    let excl = Efdep.exclusions_of dep |> Exclusions.of_seq in
-    let ctx = { dm; depmap = acc; excl; scope } in
-    let node, map =
-      try build_tree ctx dep
-      with Failure x ->
-        let id = Efdep.to_mvn_str dep in
-        failwith (x ^ "\nwhile fetching transitives of " ^ id)
-    in
-    fn node;
-    map
+  let excl = Exclusions.Set.empty in
+  let depmap = Depmap.empty in
+  let ctx = { dm; scope; excl; depmap } in
+  let pending =
+    Efpom.deps_of pom
+    |> Seq.filter (Efdep.has_scope scope)
+    |> Seq.map (fun d -> (q, d))
+    |> Queue.of_seq
   in
-  let depmap =
-    Efpom.deps_of pom |> Seq.filter (Efdep.has_scope scope) |> map_of_seq
-  in
-  Depmap.to_seq depmap |> Seq.map (fun (_, d) -> d) |> Seq.fold_left fold depmap
+  just_do_it ctx pending
 
-let iter scope fn pom = fold_deps_of fn scope pom |> ignore
+let iter scope pom =
+  let root = Queue.create () in
+  start scope pom root |> ignore;
+  Queue.to_seq root
 
-let resolve scope (pom : Efpom.t) =
-  fold_deps_of (fun _ -> ()) scope pom
-  |> Depmap.to_seq
-  |> Seq.map (fun (_, d) -> Efdep.id_of d)
+let resolve scope pom =
+  let root = Queue.create () in
+  start scope pom root |> Depmap.to_seq |> Seq.map (fun (_, v) -> Efdep.id_of v)

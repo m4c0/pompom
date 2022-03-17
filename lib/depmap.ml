@@ -22,6 +22,7 @@ type 'a t = { map : 'a Map.t; order : Map.key Seq.t }
 let empty = { map = Map.empty; order = Seq.empty }
 let find_opt k (tt : 'a t) = Map.find_opt k tt.map
 let map fn (tt : 'a t) = { tt with map = Map.map fn tt.map }
+let exists k (tt : 'a t) = find_opt k tt |> Option.is_some
 
 let add k v m =
   match find_opt k m with
